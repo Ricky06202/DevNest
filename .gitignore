@@ -1,0 +1,47 @@
+# Entornos Virtuales
+venv/
+env/
+ENV/
+.venv/
+.env
+
+# Configuración IDE / Editores
+.vscode/
+.idea/
+.vs/
+*.swp
+*.swo
+
+# C# / Blazor (Frontend)
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Python (Backend)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+
+# Base de Datos
+*.db
+*.sqlite3
+devnest_local.db
+
+# Node / JS (en caso de usar herramientas como bun/npm)
+node_modules/
+dist/
+build/
+.npm/
+
+# OS
+.DS_Store
+Thumbs.db
