@@ -1,0 +1,94 @@
+@page "/register"
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-10">
+    <MudCard Elevation="4" Class="pa-4">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5" Align="Align.Center"><b>Crear Cuenta</b></MudText>
+                <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">Únete a la comunidad de DevNest</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+            }
+
+            <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+                <DataAnnotationsValidator />
+
+                <MudTextField @bind-Value="registerModel.Username" 
+                              Label="Usuario (Alias)" 
+                              Variant="Variant.Outlined" 
+                              Margin="Margin.Dense"
+                              For="@(() => registerModel.Username)"
+                              Class="mb-4"/>
+
+                <MudTextField @bind-Value="registerModel.Email" 
+                              Label="Correo Electrónico" 
+                              InputType="InputType.Email"
+                              Variant="Variant.Outlined" 
+                              Margin="Margin.Dense"
+                              For="@(() => registerModel.Email)"
+                              Class="mb-4"/>
+
+                <MudTextField @bind-Value="registerModel.Password" 
+                              Label="Contraseña" 
+                              InputType="InputType.Password" 
+                              Variant="Variant.Outlined" 
+                              Margin="Margin.Dense"
+                              For="@(() => registerModel.Password)"
+                              Class="mb-4"/>
+
+                <MudButton ButtonType="ButtonType.Submit" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Success" 
+                           Size="Size.Large" 
+                           FullWidth="true" 
+                           Disabled="@isLoading"
+                           Class="mt-2">
+                    @if (isLoading)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                        <MudText Class="ms-2">Procesando...</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Registrarse</MudText>
+                    }
+                </MudButton>
+            </EditForm>
+        </MudCardContent>
+        <MudCardActions Class="justify-center mt-2">
+            <MudText>¿Ya tienes cuenta?</MudText>
+            <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/login">Inicia sesión aquí</MudButton>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private RegisterRequest registerModel = new();
+    private bool isLoading = false;
+    private string? errorMessage;
+
+    private async Task HandleRegister()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        var success = await AuthService.RegisterAsync(registerModel);
+
+        if (success)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        else
+        {
+            errorMessage = "No se pudo completar el registro. Intente con un alias o correo diferente.";
+        }
+
+        isLoading = false;
+    }
+}

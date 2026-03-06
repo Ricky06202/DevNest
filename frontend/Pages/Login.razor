@@ -1,0 +1,85 @@
+@page "/login"
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+    <MudCard Elevation="4" Class="pa-4">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5" Align="Align.Center"><b>Iniciar Sesión</b></MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+            }
+            
+            <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+                <DataAnnotationsValidator />
+                
+                <MudTextField @bind-Value="loginModel.Username" 
+                              Label="Usuario" 
+                              Variant="Variant.Outlined" 
+                              Margin="Margin.Dense" 
+                              Required="true"
+                              Class="mb-4"/>
+                              
+                <MudTextField @bind-Value="loginModel.Password" 
+                              Label="Contraseña" 
+                              InputType="InputType.Password" 
+                              Variant="Variant.Outlined" 
+                              Margin="Margin.Dense" 
+                              Required="true"
+                              Class="mb-4"/>
+
+                <MudButton ButtonType="ButtonType.Submit" 
+                           Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           Size="Size.Large" 
+                           FullWidth="true" 
+                           Disabled="@isLoading"
+                           Class="mt-2">
+                    @if (isLoading)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                        <MudText Class="ms-2">Entrando...</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Entrar</MudText>
+                    }
+                </MudButton>
+            </EditForm>
+        </MudCardContent>
+        <MudCardActions Class="justify-center mt-2">
+            <MudText>¿No tienes cuenta?</MudText>
+            <MudButton Variant="Variant.Text" Color="Color.Secondary" Href="/register">Regístrate aquí</MudButton>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private LoginRequest loginModel = new();
+    private bool isLoading = false;
+    private string? errorMessage;
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        var success = await AuthService.LoginAsync(loginModel);
+
+        if (success)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            errorMessage = "Usuario o contraseña incorrectos.";
+        }
+
+        isLoading = false;
+    }
+}

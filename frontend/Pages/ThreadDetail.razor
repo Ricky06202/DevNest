@@ -1,0 +1,260 @@
+@page "/threads/{Id:int}"
+@attribute [Authorize]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@using System.ComponentModel.DataAnnotations
+@using BlazorMonaco
+@using BlazorMonaco.Editor
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" Color="Color.Default" OnClick="GoBack" Class="mb-4">Volver al Muro</MudButton>
+
+    @if (isLoading)
+    {
+        <div class="d-flex justify-center mt-10">
+            <MudProgressCircular Color="Color.Secondary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else if (thread == null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-5">No se pudo cargar el hilo o no existe.</MudAlert>
+    }
+    else
+    {
+        <!-- Hilo Principal -->
+        <MudCard Elevation="4" Class="mb-8">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h4" Color="Color.Secondary"><b>@thread.title</b></MudText>
+                    <div class="d-flex align-center mt-2">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mr-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
+                            Usuario #@thread.author_id
+                        </MudText>
+                        <MudText Typo="Typo.caption">@thread.created_at.ToString("dd MMM yyyy HH:mm")</MudText>
+                        <MudSpacer />
+                        <MudChip T="string" Color="Color.Dark" Size="Size.Small">@thread.code_language</MudChip>
+                    </div>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <div style="height: 400px; border: 1px solid var(--mud-palette-lines-default); border-radius: 4px; overflow: hidden; position: relative;">
+                    <StandaloneCodeEditor @ref="_editor" Id="readonly-monaco-editor" ConstructionOptions="EditorConstructionOptions" CssClass="monaco-editor-container" />
+                </div>
+            </MudCardContent>
+        </MudCard>
+
+        <MudText Typo="Typo.h5" Class="mb-4"><b>Respuestas (@thread.replies?.Count)</b></MudText>
+
+        <!-- Lista de Respuestas -->
+        @if (thread.replies != null && thread.replies.Any())
+        {
+            <div class="d-flex flex-column gap-4 mb-8">
+                @foreach (var reply in thread.replies)
+                {
+                    <MudPaper Elevation="2" Class="pa-4" Style="@(reply.is_solution ? "border-left: 4px solid var(--mud-palette-success);" : "")">
+                        <div class="d-flex justify-space-between align-center mb-2">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                <b>Usuario #@reply.author_id</b> - @reply.created_at.ToString("dd MMM yyyy HH:mm")
+                            </MudText>
+                            <div>
+                                @if (reply.is_solution)
+                                {
+                                    <MudChip T="string" Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle">Solución Óptima</MudChip>
+                                }
+                                else
+                                {
+                                    <MudTooltip Text="Marcar como Solución">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" OnClick="@(() => MarkAsSolution(reply.id))" />
+                                    </MudTooltip>
+                                }
+                            </div>
+                        </div>
+                        <MudText Typo="Typo.body1" Style="white-space: pre-wrap;">@reply.content</MudText>
+                    </MudPaper>
+                }
+            </div>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Normal" Class="mb-8">No hay respuestas aún. ¡Sé el primero en ayudar!</MudAlert>
+        }
+
+        <!-- Formulario de Nueva Respuesta -->
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6"><b>Agregar Respuesta</b></MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <EditForm Model="replyModel" OnValidSubmit="SubmitReply">
+                    <DataAnnotationsValidator />
+                    <MudTextField @bind-Value="replyModel.content" 
+                                  Label="Escribe tu código, sugerencia o feedback aquí..." 
+                                  Variant="Variant.Outlined" 
+                                  Lines="5"
+                                  For="@(() => replyModel.content)"
+                                  Required="true"
+                                  Class="mb-4" />
+                                  
+                    <div class="d-flex justify-end">
+                        <MudButton ButtonType="ButtonType.Submit" 
+                                   Variant="Variant.Filled" 
+                                   Color="Color.Primary" 
+                                   Disabled="@isReplying">
+                            @if (isReplying)
+                            {
+                                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                                <MudText Class="ms-2">Enviando...</MudText>
+                            }
+                            else
+                            {
+                                <MudText>Responder Hilo</MudText>
+                            }
+                        </MudButton>
+                    </div>
+                </EditForm>
+            </MudCardContent>
+        </MudCard>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private ThreadDetailResponse? thread;
+    private bool isLoading = true;
+    
+    // Reply form
+    private ReplyCreateRequest replyModel = new();
+    private bool isReplying = false;
+
+    // Monaco Editor
+    private StandaloneCodeEditor _editor = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadThreadData();
+    }
+
+    private async Task LoadThreadData()
+    {
+        isLoading = true;
+        try
+        {
+            thread = await Http.GetFromJsonAsync<ThreadDetailResponse>($"api/threads/{Id}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando el hilo: {ex.Message}");
+            Snackbar.Add("Error al cargar el hilo de código.", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private StandaloneEditorConstructionOptions EditorConstructionOptions(StandaloneCodeEditor editor)
+    {
+        return new StandaloneEditorConstructionOptions
+        {
+            Language = thread?.code_language.ToLower() == "c#" ? "csharp" : (thread?.code_language.ToLower() ?? "plaintext"),
+            Theme = "vs-dark",
+            Value = thread?.content ?? "",
+            ReadOnly = true,           // ESTRICTAMENTE: Solo lectura
+            AutomaticLayout = true,
+            Minimap = new EditorMinimapOptions { Enabled = false },
+            ScrollBeyondLastLine = false
+        };
+    }
+
+    private async Task SubmitReply()
+    {
+        isReplying = true;
+        try
+        {
+            // user_id temporal hasta implementar en JWT
+            var response = await Http.PostAsJsonAsync($"api/threads/{Id}/replies?user_id=1", replyModel);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("¡Respuesta publicada!", Severity.Success);
+                replyModel = new ReplyCreateRequest(); // Limpiar formulario
+                await LoadThreadData(); // Recargar el hilo y respuestas sin cambiar de página
+            }
+            else
+            {
+                Snackbar.Add("No se pudo guardar la respuesta.", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error de conexión al servidor.", Severity.Error);
+        }
+        finally
+        {
+            isReplying = false;
+        }
+    }
+
+    private async Task MarkAsSolution(int replyId)
+    {
+        try
+        {
+            // Omitimos cuerpo en PUT pasando null si la API no requiere body Payload
+            var response = await Http.PutAsync($"api/threads/replies/{replyId}/solution", null);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("¡Solución marcada existosamente!", Severity.Success);
+                await LoadThreadData();
+            }
+            else
+            {
+                Snackbar.Add("Error al marcar como solución.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error marcando solución: {ex.Message}");
+            Snackbar.Add("Error de red al intentar conectar.", Severity.Error);
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/threads");
+    }
+
+    // --- DTO CLASSES EN BLOQUE @CODE ---
+    public class ThreadDetailResponse
+    {
+        public int id { get; set; }
+        public int author_id { get; set; }
+        public string title { get; set; } = string.Empty;
+        public string content { get; set; } = string.Empty;
+        public string code_language { get; set; } = string.Empty;
+        public DateTime created_at { get; set; }
+        
+        public List<ReplyResponse> replies { get; set; } = new();
+    }
+
+    public class ReplyResponse
+    {
+        public int id { get; set; }
+        public int thread_id { get; set; }
+        public int author_id { get; set; }
+        public string content { get; set; } = string.Empty;
+        public bool is_solution { get; set; }
+        public DateTime created_at { get; set; }
+    }
+
+    public class ReplyCreateRequest
+    {
+        [Required(ErrorMessage = "La respuesta no puede estar vacía.")]
+        public string content { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,124 @@
+@page "/projects/{Id:int}"
+@attribute [Authorize]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" Color="Color.Default" OnClick="GoBack" Class="mb-4">Volver al Radar</MudButton>
+
+    @if (isLoading)
+    {
+        <div class="d-flex justify-center mt-10">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else if (project == null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-5">El proyecto no existe o fue eliminado.</MudAlert>
+    }
+    else
+    {
+        <MudCard Elevation="5" Class="pa-6">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <div class="d-flex justify-space-between align-start">
+                        <div>
+                            <MudText Typo="Typo.h3" Color="Color.Primary" Class="mb-2"><b>@project.title</b></MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Creado por <b>Usuario #@project.owner_id</b> el @project.created_at.ToString("dd MMMM yyyy")
+                            </MudText>
+                        </div>
+                        <div>
+                            @if (project.is_open)
+                            {
+                                <MudChip T="string" Color="Color.Success" Size="Size.Large" Icon="@Icons.Material.Filled.LockOpen">Estado: Abierto</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip T="string" Color="Color.Error" Size="Size.Large" Icon="@Icons.Material.Filled.Lock">Estado: Cerrado</MudChip>
+                            }
+                        </div>
+                    </div>
+                </CardHeaderContent>
+            </MudCardHeader>
+
+            <MudCardContent Class="mt-4">
+                <MudText Typo="Typo.h6" Class="mb-3"><b>Acerca de este proyecto</b></MudText>
+                
+                <MudPaper Elevation="0" Class="pa-4 mb-6" Style="background-color: var(--mud-palette-background-grey);">
+                    <MudText Typo="Typo.body1" Style="white-space: pre-wrap; font-size: 1.1rem; line-height: 1.6;">@project.description</MudText>
+                </MudPaper>
+
+                @if (!string.IsNullOrEmpty(project.roles_sought))
+                {
+                    <MudText Typo="Typo.h6" Class="mb-3"><b>Roles que buscamos completar:</b></MudText>
+                    <div class="d-flex flex-wrap gap-2 mb-8">
+                        @foreach (var role in project.roles_sought.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined" Size="Size.Large">@role.Trim()</MudChip>
+                        }
+                    </div>
+                }
+            </MudCardContent>
+
+            <MudCardActions Class="d-flex justify-end pt-4 pb-2 pr-4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" 
+                           StartIcon="@Icons.Material.Filled.Mail" 
+                           Disabled="!project.is_open"
+                           OnClick="ContactCreator">
+                    Contactar al Creador
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private ProjectDetailResponse? project;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        try
+        {
+            project = await Http.GetFromJsonAsync<ProjectDetailResponse>($"api/projects/{Id}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando proyecto: {ex.Message}");
+            Snackbar.Add("Hubo un error al intentar cargar el proyecto", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ContactCreator()
+    {
+        // Por ahora simulamos la acción como solicitó el usuario.
+        Snackbar.Add("¡Mensaje enviado al creador exitosamente! Pronto te contactarán.", Severity.Success);
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/projects");
+    }
+
+    // --- DTO CLASS EXCLUSIVA EN BLOQUE @CODE (REGLA ESTRICTA) ---
+    public class ProjectDetailResponse
+    {
+        public int id { get; set; }
+        public int owner_id { get; set; }
+        public string title { get; set; } = string.Empty;
+        public string description { get; set; } = string.Empty;
+        public string? roles_sought { get; set; }
+        public bool is_open { get; set; }
+        public DateTime created_at { get; set; }
+    }
+}

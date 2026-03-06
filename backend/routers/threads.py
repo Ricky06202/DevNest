@@ -18,7 +18,15 @@ def get_threads(skip: int = 0, limit: int = 100, db: Session = Depends(database.
     """
     return db.query(models.Thread).offset(skip).limit(limit).all()
 
-@router.post("/", response_model=schemas.ThreadResponse, status_code=status.HTTP_201_CREATED)
+@router.get("/{thread_id}", response_model=schemas.ThreadResponse)
+def get_thread(thread_id: int, db: Session = Depends(database.get_db)):
+    """
+    Obtiene un hilo específico con todas sus respuestas (cargadas vía relationship de SQLAlchemy).
+    """
+    thread = db.query(models.Thread).filter(models.Thread.id == thread_id).first()
+    if not thread:
+        raise HTTPException(status_code=404, detail="Hilo no encontrado")
+    return thread
 def create_thread(thread: schemas.ThreadCreate, user_id: int, db: Session = Depends(database.get_db)):
     """
     Publica un nuevo fragmento de código para revisión (Muro interactivo).

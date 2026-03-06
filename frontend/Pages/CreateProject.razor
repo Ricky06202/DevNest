@@ -1,0 +1,115 @@
+@page "/projects/new"
+@attribute [Authorize]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@using System.ComponentModel.DataAnnotations
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    <div class="d-flex align-center mb-6">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Default" OnClick="GoBack" Class="mr-2" />
+        <MudText Typo="Typo.h5"><b>Publicar Nuevo Proyecto</b></MudText>
+    </div>
+
+    <MudCard Elevation="4">
+        <MudCardContent Class="pa-6">
+            <EditForm Model="createModel" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                
+                <MudTextField @bind-Value="createModel.title" 
+                              Label="Título del Proyecto" 
+                              Variant="Variant.Outlined" 
+                              For="@(() => createModel.title)"
+                              Required="true"
+                              Class="mb-4" />
+                              
+                <MudTextField @bind-Value="createModel.description" 
+                              Label="Descripción técnica y detalles" 
+                              Variant="Variant.Outlined" 
+                              Lines="5"
+                              For="@(() => createModel.description)"
+                              Required="true"
+                              Class="mb-4" />
+                              
+                <MudTextField @bind-Value="createModel.roles_sought" 
+                              Label="Roles Buscados (separados por coma)" 
+                              HelperText="Ejemplo: Frontend Blazor, Backend Python, Diseñador UX"
+                              Variant="Variant.Outlined" 
+                              For="@(() => createModel.roles_sought)"
+                              Class="mb-6" />
+
+                <div class="d-flex justify-end">
+                    <MudButton OnClick="GoBack" Variant="Variant.Text" Color="Color.Default" Class="mr-3">Cancelar</MudButton>
+                    <MudButton ButtonType="ButtonType.Submit" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Primary" 
+                               Disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                            <MudText Class="ms-2">Publicando...</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Publicar Proyecto</MudText>
+                        }
+                    </MudButton>
+                </div>
+            </EditForm>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private ProjectCreateRequest createModel = new();
+    private bool isSubmitting = false;
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/projects");
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        
+        try
+        {
+            // NOTA: Temporalmente pasamos user_id 1 para que el API de Python no falle si requiere query param. 
+            // En una arquitectura final con JWT completo en el backend, FastAPI extraerá esto del token enviado por HttpClient.
+            var response = await Http.PostAsJsonAsync("api/projects/?user_id=1", createModel);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("¡Proyecto publicado con éxito en el Radar!", Severity.Success);
+                NavigationManager.NavigateTo("/projects");
+            }
+            else
+            {
+                Snackbar.Add("Error al publicar el proyecto. Revisa tu conexión.", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Ha ocurrido un error inesperado.", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    // --- DTO CLASSES EXCLUSIVOS EN BLOQUE @CODE (REGLA ESTRICTA) ---
+    public class ProjectCreateRequest
+    {
+        [Required(ErrorMessage = "El título es obligatorio para que encuentren tu proyecto.")]
+        public string title { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Debes proveer una descripción del proyecto.")]
+        public string description { get; set; } = string.Empty;
+
+        public string? roles_sought { get; set; }
+        
+        public bool is_open { get; set; } = true;
+    }
+}

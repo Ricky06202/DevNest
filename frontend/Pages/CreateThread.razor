@@ -1,0 +1,151 @@
+@page "/threads/new"
+@attribute [Authorize]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IJSRuntime _jsRuntime
+@using System.ComponentModel.DataAnnotations
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    <div class="d-flex align-center mb-6">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Default" OnClick="GoBack" Class="mr-2" />
+        <MudText Typo="Typo.h5"><b>Crear Nuevo Hilo</b></MudText>
+    </div>
+
+    <MudCard Elevation="4">
+        <MudCardContent Class="pa-6">
+            <EditForm Model="createModel" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                
+                <MudTextField @bind-Value="createModel.title" 
+                              Label="Título de la duda o discusión" 
+                              Variant="Variant.Outlined" 
+                              For="@(() => createModel.title)"
+                              Required="true"
+                              Class="mb-4" />
+
+                <MudSelect T="string" Value="createModel.code_language" ValueChanged="OnLanguageChanged"
+                           Label="Lenguaje de Programación" 
+                           Variant="Variant.Outlined" 
+                           AnchorOrigin="Origin.BottomCenter"
+                           Required="true"
+                           Class="mb-4">
+                    <MudSelectItem Value="@("csharp")">C# / Blazor</MudSelectItem>
+                    <MudSelectItem Value="@("python")">Python / FastAPI</MudSelectItem>
+                    <MudSelectItem Value="@("javascript")">JavaScript / TypeScript</MudSelectItem>
+                    <MudSelectItem Value="@("html")">HTML / CSS</MudSelectItem>
+                    <MudSelectItem Value="@("sql")">Base de Datos / SQL</MudSelectItem>
+                    <MudSelectItem Value="@("plaintext")">Otro / Arquitectura</MudSelectItem>
+                </MudSelect>
+
+                <div class="mb-4" style="height: 300px; border: 1px solid var(--mud-palette-lines-default); border-radius: 4px; overflow: hidden; position: relative;">
+                    <StandaloneCodeEditor @ref="_editor" Id="monaco-editor" ConstructionOptions="EditorConstructionOptions" CssClass="monaco-editor-container" />
+                </div>
+                <!-- Hidden input to still trigger data binding validation if necessary -->
+                <InputText @bind-Value="createModel.content" style="display:none;" />
+                <ValidationMessage For="@(() => createModel.content)" class="mud-input-helper-text mud-input-error" />
+
+                <div class="d-flex justify-end">
+                    <MudButton OnClick="GoBack" Variant="Variant.Text" Color="Color.Default" Class="mr-3">Cancelar</MudButton>
+                    <MudButton ButtonType="ButtonType.Submit" 
+                               Variant="Variant.Filled" 
+                               Color="Color.Secondary" 
+                               Disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                            <MudText Class="ms-2">Enviando...</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Publicar Hilo</MudText>
+                        }
+                    </MudButton>
+                </div>
+            </EditForm>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private ThreadCreateRequest createModel = new() { code_language = "csharp" };
+    private bool isSubmitting = false;
+    private StandaloneCodeEditor _editor = null!;
+
+    private StandaloneEditorConstructionOptions EditorConstructionOptions(StandaloneCodeEditor editor)
+    {
+        return new StandaloneEditorConstructionOptions
+        {
+            Language = "csharp",
+            Theme = "vs-dark",
+            AutomaticLayout = true,
+            Minimap = new EditorMinimapOptions { Enabled = false }
+        };
+    }
+
+    private async Task OnLanguageChanged(string newLanguage)
+    {
+        createModel.code_language = newLanguage;
+        if (_editor != null)
+        {
+            var model = await _editor.GetModel();
+            await BlazorMonaco.Editor.Global.SetModelLanguage(_jsRuntime, model, newLanguage);
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/threads");
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        
+        try
+        {
+            // Extraer el código real desde Monaco Editor antes de hacer el POST
+            createModel.content = await _editor.GetValue();
+            
+            if (string.IsNullOrWhiteSpace(createModel.content))
+            {
+                Snackbar.Add("El código o contenido está vacío.", Severity.Warning);
+                isSubmitting = false;
+                return;
+            }
+            // Pasamos user_id 1 temporalmente hasta implementar extracción de Token en Backend
+            var response = await Http.PostAsJsonAsync("api/threads/?user_id=1", createModel);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("¡Hilo publicado exitosamente!", Severity.Success);
+                NavigationManager.NavigateTo("/threads");
+            }
+            else
+            {
+                Snackbar.Add("Error al publicar el hilo.", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Ocurrió un error inesperado al conectar con el servidor.", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    // --- DTO CLASSES EN BLOQUE @CODE ---
+    public class ThreadCreateRequest
+    {
+        [Required(ErrorMessage = "Debes ingresar un título.")]
+        public string title { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El lenguaje es obligatorio.")]
+        public string code_language { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El contenido no puede estar vacío.")]
+        public string content { get; set; } = string.Empty;
+    }
+}
