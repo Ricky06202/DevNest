@@ -30,15 +30,20 @@
                             </MudText>
                         </div>
                         <div>
-                            @if (project.is_open)
-                            {
-                                <MudChip T="string" Color="Color.Success" Size="Size.Large" Icon="@Icons.Material.Filled.LockOpen">Estado: Abierto</MudChip>
-                            }
-                            else
-                            {
-                                <MudChip T="string" Color="Color.Error" Size="Size.Large" Icon="@Icons.Material.Filled.Lock">Estado: Cerrado</MudChip>
-                            }
-                        </div>
+                                @if (project.is_open)
+                                {
+                                    <MudChip T="string" Color="Color.Success" Size="Size.Large" Icon="@Icons.Material.Filled.LockOpen">Estado: Abierto</MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip T="string" Color="Color.Error" Size="Size.Large" Icon="@Icons.Material.Filled.Lock">Estado: Cerrado</MudChip>
+                                }
+
+                                @if (isOwner)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Class="ml-2" OnClick="NavigateToEdit" />
+                                }
+                            </div>
                     </div>
                 </CardHeaderContent>
             </MudCardHeader>
@@ -80,13 +85,14 @@
 
     private ProjectDetailResponse? project;
     private bool isLoading = true;
+    private bool isOwner = false; // Simulación de dueño
 
     protected override async Task OnInitializedAsync()
     {
         isLoading = true;
         try
         {
-            project = await Http.GetFromJsonAsync<ProjectDetailResponse>($"api/projects/{Id}");
+            project = await Http.GetFromJsonAsync<ProjectDetailResponse>($"projects/{Id}");
         }
         catch (Exception ex)
         {
@@ -96,7 +102,14 @@
         finally
         {
             isLoading = false;
+            // Simulación: Usuario 1 es dueño de todos los proyectos para pruebas
+            isOwner = true; 
         }
+    }
+
+    private void NavigateToEdit()
+    {
+        NavigationManager.NavigateTo($"/projects/{Id}/edit");
     }
 
     private void ContactCreator()

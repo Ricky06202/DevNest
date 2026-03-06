@@ -85,7 +85,7 @@ else
     {
         try
         {
-            threads = await Http.GetFromJsonAsync<List<ThreadResponse>>("api/threads/");
+            threads = await Http.GetFromJsonAsync<List<ThreadResponse>>("threads/");
         }
         catch (Exception ex)
         {

@@ -87,7 +87,7 @@ else
     {
         try
         {
-            projects = await Http.GetFromJsonAsync<List<ProjectResponse>>("api/projects/");
+            projects = await Http.GetFromJsonAsync<List<ProjectResponse>>("projects/");
         }
         catch (Exception ex)
         {

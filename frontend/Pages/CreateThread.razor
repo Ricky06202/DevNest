@@ -165,7 +165,7 @@
                 return;
             }
             // Pasamos user_id 1 temporalmente hasta implementar extracción de Token en Backend
-            var response = await Http.PostAsJsonAsync("api/threads/?user_id=1", createModel);
+            var response = await Http.PostAsJsonAsync("threads/?user_id=1", createModel);
             
             if (response.IsSuccessStatusCode)
             {

@@ -77,7 +77,7 @@
         {
             // NOTA: Temporalmente pasamos user_id 1 para que el API de Python no falle si requiere query param. 
             // En una arquitectura final con JWT completo en el backend, FastAPI extraerá esto del token enviado por HttpClient.
-            var response = await Http.PostAsJsonAsync("api/projects/?user_id=1", createModel);
+            var response = await Http.PostAsJsonAsync("projects/?user_id=1", createModel);
             
             if (response.IsSuccessStatusCode)
             {

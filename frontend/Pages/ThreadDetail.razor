@@ -171,7 +171,7 @@
         isLoading = true;
         try
         {
-            thread = await Http.GetFromJsonAsync<ThreadDetailResponse>($"api/threads/{Id}");
+            thread = await Http.GetFromJsonAsync<ThreadDetailResponse>($"threads/{Id}");
         }
         catch (Exception ex)
         {
@@ -204,7 +204,7 @@
         try
         {
             // user_id temporal hasta implementar en JWT
-            var response = await Http.PostAsJsonAsync($"api/threads/{Id}/replies?user_id=1", replyModel);
+            var response = await Http.PostAsJsonAsync($"threads/{Id}/replies?user_id=1", replyModel);
             
             if (response.IsSuccessStatusCode)
             {
@@ -232,7 +232,7 @@
         try
         {
             // Omitimos cuerpo en PUT pasando null si la API no requiere body Payload
-            var response = await Http.PutAsync($"api/threads/replies/{replyId}/solution", null);
+            var response = await Http.PutAsync($"threads/replies/{replyId}/solution", null);
             if (response.IsSuccessStatusCode)
             {
                 Snackbar.Add("¡Solución marcada existosamente!", Severity.Success);

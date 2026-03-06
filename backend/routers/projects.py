@@ -47,6 +47,29 @@ def get_project(project_id: int, db: Session = Depends(database.get_db)):
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     return project
 
+@router.put("/{project_id}", response_model=schemas.ProjectResponse)
+def update_project(project_id: int, project_update: schemas.ProjectCreate, user_id: int, db: Session = Depends(database.get_db)):
+    """
+    Actualiza los detalles de un proyecto.
+    """
+    db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+        
+    # Verificar que el usuario es el dueño (dueño_id)
+    if db_project.owner_id != user_id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para editar este proyecto")
+
+    # Actualizar campos
+    db_project.title = project_update.title
+    db_project.description = project_update.description
+    db_project.roles_sought = project_update.roles_sought
+    db_project.is_open = project_update.is_open
+
+    db.commit()
+    db.refresh(db_project)
+    return db_project
+
 @router.put("/{project_id}/close", response_model=schemas.ProjectResponse)
 def close_project(project_id: int, db: Session = Depends(database.get_db)):
     """

@@ -27,6 +27,7 @@ def get_thread(thread_id: int, db: Session = Depends(database.get_db)):
     if not thread:
         raise HTTPException(status_code=404, detail="Hilo no encontrado")
     return thread
+@router.post("/", response_model=schemas.ThreadResponse, status_code=status.HTTP_201_CREATED)
 def create_thread(thread: schemas.ThreadCreate, user_id: int, db: Session = Depends(database.get_db)):
     """
     Publica un nuevo fragmento de código para revisión (Muro interactivo).

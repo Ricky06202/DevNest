@@ -1,0 +1,176 @@
+@page "/projects/{Id:int}/edit"
+@attribute [Authorize]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@using System.ComponentModel.DataAnnotations
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    <div class="d-flex align-center mb-6">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Default" OnClick="GoBack" Class="mr-2" />
+        <MudText Typo="Typo.h5"><b>Editar Proyecto</b></MudText>
+    </div>
+
+    @if (isLoadingData)
+    {
+        <div class="d-flex justify-center mt-10">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else if (editModel == null)
+    {
+        <MudAlert Severity="Severity.Error">No se pudo cargar la información del proyecto.</MudAlert>
+    }
+    else
+    {
+        <MudCard Elevation="4">
+            <MudCardContent Class="pa-6">
+                <EditForm Model="editModel" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+                    
+                    <MudTextField @bind-Value="editModel.title" 
+                                  Label="Título del Proyecto" 
+                                  Variant="Variant.Outlined" 
+                                  For="@(() => editModel.title)"
+                                  Required="true"
+                                  Class="mb-4" />
+                                  
+                    <MudTextField @bind-Value="editModel.description" 
+                                  Label="Descripción técnica y detalles" 
+                                  Variant="Variant.Outlined" 
+                                  Lines="5"
+                                  For="@(() => editModel.description)"
+                                  Required="true"
+                                  Class="mb-4" />
+                                  
+                    <MudTextField @bind-Value="editModel.roles_sought" 
+                                  Label="Roles Buscados (separados por coma)" 
+                                  Variant="Variant.Outlined" 
+                                  For="@(() => editModel.roles_sought)"
+                                  Class="mb-6" />
+
+                    <div class="d-flex align-center mb-6">
+                        <MudSwitch T="bool" @bind-Value="editModel.is_open" 
+                                   Color="Color.Success" 
+                                   Label="@(editModel.is_open ? "Estado: Abierto (Buscando equipo)" : "Estado: Cerrado (Equipo completo / Terminado)")" />
+                    </div>
+
+                    <div class="d-flex justify-end">
+                        <MudButton OnClick="GoBack" Variant="Variant.Text" Color="Color.Default" Class="mr-3">Cancelar</MudButton>
+                        <MudButton ButtonType="ButtonType.Submit" 
+                                   Variant="Variant.Filled" 
+                                   Color="Color.Primary" 
+                                   Disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                                <MudText Class="ms-2">Guardando...</MudText>
+                            }
+                            else
+                            {
+                                <MudText>Guardar Cambios</MudText>
+                            }
+                        </MudButton>
+                    </div>
+                </EditForm>
+            </MudCardContent>
+        </MudCard>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private ProjectUpdateRequest? editModel;
+    private bool isLoadingData = true;
+    private bool isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjectData();
+    }
+
+    private async Task LoadProjectData()
+    {
+        isLoadingData = true;
+        try
+        {
+            var project = await Http.GetFromJsonAsync<ProjectDetailResponse>($"projects/{Id}");
+            if (project != null)
+            {
+                editModel = new ProjectUpdateRequest
+                {
+                    title = project.title,
+                    description = project.description,
+                    roles_sought = project.roles_sought,
+                    is_open = project.is_open
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            Snackbar.Add("Error al cargar datos para editar.", Severity.Error);
+        }
+        finally
+        {
+            isLoadingData = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo($"/projects/{Id}");
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (editModel == null) return;
+        isSubmitting = true;
+        
+        try
+        {
+            // user_id=1 temporal
+            var response = await Http.PutAsJsonAsync($"projects/{Id}?user_id=1", editModel);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Proyecto actualizado exitosamente.", Severity.Success);
+                NavigationManager.NavigateTo($"/projects/{Id}");
+            }
+            else
+            {
+                Snackbar.Add("Error al actualizar el proyecto.", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error de conexión.", Severity.Error);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    public class ProjectUpdateRequest
+    {
+        [Required(ErrorMessage = "El título es obligatorio.")]
+        public string title { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La descripción es obligatoria.")]
+        public string description { get; set; } = string.Empty;
+
+        public string? roles_sought { get; set; }
+        public bool is_open { get; set; }
+    }
+
+    public class ProjectDetailResponse
+    {
+        public string title { get; set; } = string.Empty;
+        public string description { get; set; } = string.Empty;
+        public string? roles_sought { get; set; }
+        public bool is_open { get; set; }
+    }
+}

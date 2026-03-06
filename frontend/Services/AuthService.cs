@@ -28,7 +28,7 @@ namespace frontend.Providers
                 new KeyValuePair<string, string>("password", request.Password)
             });
 
-            var response = await _httpClient.PostAsync("api/login", loginData);
+            var response = await _httpClient.PostAsync("login", loginData);
 
             if (response.IsSuccessStatusCode)
             {
@@ -51,7 +51,7 @@ namespace frontend.Providers
 
         public async Task<bool> RegisterAsync(RegisterRequest request)
         {
-            var response = await _httpClient.PostAsJsonAsync("api/register", request);
+            var response = await _httpClient.PostAsJsonAsync("register", request);
             return response.IsSuccessStatusCode;
         }
 
