@@ -34,14 +34,40 @@
                         </MudText>
                         <MudText Typo="Typo.caption">@thread.created_at.ToString("dd MMM yyyy HH:mm")</MudText>
                         <MudSpacer />
-                        <MudChip T="string" Color="Color.Dark" Size="Size.Small">@thread.code_language</MudChip>
+                        <MudChip T="string" Color="Color.Dark" Size="Size.Small">
+                            @(thread.snippets.Any() ? $"{thread.snippets.Count} Archivos" : "Discusión")
+                        </MudChip>
                     </div>
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
-                <div style="height: 400px; border: 1px solid var(--mud-palette-lines-default); border-radius: 4px; overflow: hidden; position: relative;">
-                    <StandaloneCodeEditor @ref="_editor" Id="readonly-monaco-editor" ConstructionOptions="EditorConstructionOptions" CssClass="monaco-editor-container" />
-                </div>
+                <MudText Typo="Typo.body1" Style="white-space: pre-wrap; color: #f8fafc; font-size: 1.1rem; line-height: 1.6;" Class="mb-6">
+                    @thread.content
+                </MudText>
+
+                @if (thread.snippets != null && thread.snippets.Any())
+                {
+                    <div class="d-flex flex-column gap-6">
+                        @foreach (var snippet in thread.snippets.Select((value, index) => new { value, index }))
+                        {
+                            <div class="snippet-block">
+                                <div style="background: rgba(15, 23, 42, 0.8); padding: 8px 16px; border: 1px solid rgba(255,255,255,0.05); border-bottom: none; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: space-between;">
+                                    <div class="d-flex align-center gap-2">
+                                        <MudIcon Icon="@Icons.Material.Rounded.Code" Size="Size.Small" Color="Color.Secondary" />
+                                        <MudText Typo="Typo.caption" Style="color: #f8fafc; font-family: 'JetBrains Mono';">@snippet.value.filename</MudText>
+                                    </div>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Dark" Variant="Variant.Text">@snippet.value.language.ToUpper()</MudChip>
+                                </div>
+                                <div style="height: 350px; border: 1px solid rgba(255,255,255,0.05); border-radius: 0 0 8px 8px; overflow: hidden; position: relative;">
+                                    <StandaloneCodeEditor @ref="detailEditors[snippet.index]" 
+                                                          Id="@($"detail-editor-{snippet.index}")" 
+                                                          ConstructionOptions="@((e) => DetailEditorOptions(e, snippet.value))" 
+                                                          CssClass="monaco-editor-container" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
             </MudCardContent>
         </MudCard>
 
@@ -132,8 +158,8 @@
     private ReplyCreateRequest replyModel = new();
     private bool isReplying = false;
 
-    // Monaco Editor
-    private StandaloneCodeEditor _editor = null!;
+    // Monaco Editors for snippets
+    private Dictionary<int, StandaloneCodeEditor> detailEditors = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -158,14 +184,14 @@
         }
     }
 
-    private StandaloneEditorConstructionOptions EditorConstructionOptions(StandaloneCodeEditor editor)
+    private StandaloneEditorConstructionOptions DetailEditorOptions(StandaloneCodeEditor editor, ThreadSnippetResponse snippet)
     {
         return new StandaloneEditorConstructionOptions
         {
-            Language = thread?.code_language.ToLower() == "c#" ? "csharp" : (thread?.code_language.ToLower() ?? "plaintext"),
+            Language = snippet.language.ToLower() == "c#" ? "csharp" : snippet.language.ToLower(),
             Theme = "vs-dark",
-            Value = thread?.content ?? "",
-            ReadOnly = true,           // ESTRICTAMENTE: Solo lectura
+            Value = snippet.code,
+            ReadOnly = true,
             AutomaticLayout = true,
             Minimap = new EditorMinimapOptions { Enabled = false },
             ScrollBeyondLastLine = false
@@ -236,10 +262,18 @@
         public int author_id { get; set; }
         public string title { get; set; } = string.Empty;
         public string content { get; set; } = string.Empty;
-        public string code_language { get; set; } = string.Empty;
+        public List<ThreadSnippetResponse> snippets { get; set; } = new();
         public DateTime created_at { get; set; }
         
         public List<ReplyResponse> replies { get; set; } = new();
+    }
+
+    public class ThreadSnippetResponse
+    {
+        public int id { get; set; }
+        public string filename { get; set; } = string.Empty;
+        public string language { get; set; } = string.Empty;
+        public string code { get; set; } = string.Empty;
     }
 
     public class ReplyResponse

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, ConfigDict, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 # ==========================================
@@ -22,20 +22,38 @@ class ReplyResponse(ReplyBase):
 
 
 # ==========================================
+# THREAD SNIPPETS (Multi-file support)
+# ==========================================
+class ThreadSnippetBase(BaseModel):
+    filename: str = Field(..., max_length=100)
+    language: str = Field(..., max_length=50)
+    code: str
+
+class ThreadSnippetCreate(ThreadSnippetBase):
+    pass
+
+class ThreadSnippetResponse(ThreadSnippetBase):
+    id: int
+    thread_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ==========================================
 # THREADS (Hilos de código)
 # ==========================================
 class ThreadBase(BaseModel):
     title: str = Field(..., max_length=150)
     content: str
-    code_language: Optional[str] = Field(default=None, description="Para el Monaco Editor, ej. 'python', 'csharp'")
 
 class ThreadCreate(ThreadBase):
-    pass
+    snippets: List[ThreadSnippetCreate] = []
 
 class ThreadResponse(ThreadBase):
     id: int
     author_id: int
     created_at: datetime
+    snippets: List[ThreadSnippetResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -2,45 +2,203 @@
 @inject frontend.Providers.AuthService AuthService
 @inject NavigationManager NavigationManager
 
-<MudThemeProvider IsDarkMode="true" />
+<MudThemeProvider Theme="DevNestTheme" IsDarkMode="true" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
 
+<style>
+    /* Premium Modern Dark Theme (Vercel/Google Inspired) */
+    .floating-appbar {
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        background-color: rgba(15, 23, 42, 0.75) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 16px !important;
+        top: 16px !important;
+        left: 24px !important;
+        right: 24px !important;
+        width: auto !important;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1) !important;
+        transition: all 0.3s ease !important;
+        overflow: hidden !important;
+    }
+    .glass-drawer {
+        background-color: rgba(15, 23, 42, 0.98) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+        padding-top: 1.5rem;
+        overflow-x: hidden !important;
+    }
+    /* Ocultar scrollbar en el drawer para un look más limpio */
+    .glass-drawer .mud-drawer-content::-webkit-scrollbar {
+        display: none;
+    }
+    .glass-drawer .mud-drawer-content {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .neon-card { 
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        border-radius: 12px !important;
+        background-color: rgba(30, 41, 59, 0.4) !important;
+        backdrop-filter: blur(12px);
+    }
+    .neon-card:hover {
+        border-color: rgba(59, 130, 246, 0.4) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+        transform: translateY(-4px);
+    }
+    /* Buttons: Translucent and elegant */
+    .mud-button-filled.mud-button-filled-primary {
+        background-color: rgba(59, 130, 246, 0.12) !important;
+        color: #60a5fa !important;
+        border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        backdrop-filter: blur(4px);
+    }
+    .mud-button-filled.mud-button-filled-primary:hover {
+        background-color: rgba(59, 130, 246, 0.25) !important;
+        border-color: rgba(59, 130, 246, 0.6) !important;
+    }
+    
+    .mud-layout { background-color: transparent !important; }
+    .mud-main-content { 
+        background-color: transparent !important; 
+        min-height: 100vh;
+        padding-top: 100px !important;
+    }
+    
+    /* Breadcrumb/Path style */
+    .dev-path {
+        font-family: 'JetBrains Mono', monospace;
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+</style>
+
 <MudLayout>
-    <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+    <MudAppBar Elevation="0" Class="floating-appbar" Fixed="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" Class="mr-2" />
         
-        <MudText Typo="Typo.h5" Class="ml-3"><b>DevNest</b></MudText>
+        <MudIcon Icon="@Icons.Material.Filled.Terminal" Color="Color.Primary" Size="Size.Medium" Class="mr-2" />
+        <MudText Typo="Typo.h6" Style="font-weight: 700; letter-spacing: -0.5px;">DevNest</MudText>
         <MudSpacer />
         
         <AuthorizeView>
             <Authorized>
-                <MudButton Variant="Variant.Text" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Person" Href="/profile" Class="mr-4">
+                <!-- Botón de Perfil Rediseñado (sutil gris) -->
+                <MudButton Variant="Variant.Text" 
+                           Color="Color.Default" 
+                           StartIcon="@Icons.Material.Rounded.AccountCircle" 
+                           Href="/profile" 
+                           Class="mr-3"
+                           Style="color: #cbd5e1; text-transform: none; font-weight: 500;">
                     @context.User.Identity?.Name
                 </MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Logout" OnClick="LogoutAsync">Salir</MudButton>
+                <!-- Botón de Salida (Acento sutil de alerta) -->
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Error" 
+                           StartIcon="@Icons.Material.Rounded.Logout" 
+                           OnClick="LogoutAsync"
+                           Style="border-color: rgba(239, 68, 68, 0.5); border-radius: 8px;">
+                    Salir
+                </MudButton>
             </Authorized>
             <NotAuthorized>
-                <MudButton Color="Color.Inherit" Variant="Variant.Text" Href="/login">Entrar</MudButton>
-                <MudButton Color="Color.Inherit" Variant="Variant.Outlined" Class="ml-2" Href="/register">Registrarse</MudButton>
+                <MudButton Variant="Variant.Text" 
+                           Href="/login" 
+                           Style="color: #94a3b8; text-transform: none; font-weight: 500;"
+                           Class="mr-2">
+                    Iniciar Sesión
+                </MudButton>
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           Href="/register"
+                           Class="mud-button-filled">
+                    Unirse a DevNest
+                </MudButton>
             </NotAuthorized>
         </AuthorizeView>
     </MudAppBar>
     
-    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0" Class="glass-drawer" Variant="DrawerVariant.Responsive">
+        <div class="px-4 pb-4">
+            <MudText Typo="Typo.caption" Style="color: #64748b; font-weight: 600; letter-spacing: 1px;">NAVEGACIÓN</MudText>
+        </div>
         <NavMenu />
     </MudDrawer>
     
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-5">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+            <!-- Path/Breadcrumb System -->
+            <div class="dev-path mb-6 d-flex align-center">
+                <MudIcon Icon="@Icons.Material.Rounded.Folder" Size="Size.Small" Class="mr-2" />
+                <span>~/devnest</span>
+                <span style="color: #3b82f6;" class="mx-1">/</span>
+                <span style="color: #f8fafc;">@GetActivePath()</span>
+            </div>
             @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
 
 @code {
+    private string GetActivePath() => NavigationManager.Uri.Replace(NavigationManager.BaseUri, "").ToLower() switch {
+        "" => "home",
+        "projects" => "radar",
+        "threads" => "muro",
+        "profile" => "perfil",
+        var p when p.StartsWith("projects/") => "radar/detalle",
+        var p when p.StartsWith("threads/") => "muro/detalle",
+        var other => other
+    };
+
     private bool _drawerOpen = true;
+
+    // Configuración del Tema Premium Tech (Inspirado en Vercel, Stripe, Google)
+    private MudTheme DevNestTheme = new MudTheme()
+    {
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#3b82f6",          // Blue 500 (Elegante y confiable)
+            Secondary = "#8b5cf6",        // Violet 500 (Acento moderno)
+            Tertiary = "#10b981",         // Emerald 500 (Éxito/Acciones)
+            Background = "rgba(0,0,0,0)", // Color transparente seguro para MudColor Parser
+            Surface = "#1e293b",          // Slate 800 (Tarjetas limpias sólidas si no usan blur)
+            AppbarBackground = "rgba(15, 23, 42, 0.7)", // Slate 900 semi-transparente
+            DrawerBackground = "rgba(15, 23, 42, 0.95)", // Slate 900
+            TextPrimary = "#f8fafc",      // Slate 50 (Alta legibilidad)
+            TextSecondary = "#94a3b8",    // Slate 400
+            ActionDefault = "#94a3b8",    // Iconos gris claro
+            LinesDefault = "rgba(255, 255, 255, 0.08)" // Bordes muy sutiles
+        }
+    };
+
+    protected override void OnInitialized()
+    {
+        // Mezclamos tipografías: Roboto para leer cómodamente, JetBrains para headers y código
+        var codeFont = new[] { "JetBrains Mono", "monospace" };
+        var bodyFont = new[] { "Roboto", "Helvetica", "Arial", "sans-serif" };
+        
+        if (DevNestTheme.Typography != null)
+        {
+            if (DevNestTheme.Typography.Default != null) DevNestTheme.Typography.Default.FontFamily = bodyFont;
+            if (DevNestTheme.Typography.H1 != null) DevNestTheme.Typography.H1.FontFamily = codeFont;
+            if (DevNestTheme.Typography.H2 != null) DevNestTheme.Typography.H2.FontFamily = codeFont;
+            if (DevNestTheme.Typography.H3 != null) DevNestTheme.Typography.H3.FontFamily = codeFont;
+            if (DevNestTheme.Typography.H4 != null) DevNestTheme.Typography.H4.FontFamily = codeFont;
+            if (DevNestTheme.Typography.H5 != null) DevNestTheme.Typography.H5.FontFamily = codeFont;
+            if (DevNestTheme.Typography.H6 != null) DevNestTheme.Typography.H6.FontFamily = codeFont;
+            if (DevNestTheme.Typography.Body1 != null) DevNestTheme.Typography.Body1.FontFamily = bodyFont;
+            if (DevNestTheme.Typography.Body2 != null) DevNestTheme.Typography.Body2.FontFamily = bodyFont;
+            
+            if (DevNestTheme.Typography.Button != null) 
+            {
+                DevNestTheme.Typography.Button.FontFamily = codeFont;
+                DevNestTheme.Typography.Button.TextTransform = "none"; // Botones estilo moderno sin forzar TODO MAYÚSCULAS
+            }
+        }
+    }
 
     private void DrawerToggle()
     {

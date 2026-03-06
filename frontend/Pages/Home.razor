@@ -2,18 +2,58 @@
 
 <PageTitle>Home</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-16 text-center">
-    <MudPaper Elevation="0" Class="pa-8" Style="background-color: transparent;">
-        <MudText Typo="Typo.h2" Color="Color.Primary" Class="mb-4"><b>Bienvenido a Dev Network</b></MudText>
-        <MudText Typo="Typo.h5" Color="Color.Secondary" Class="mb-8">El espacio perfecto para conectar y colaborar con otros desarrolladores.</MudText>
-        
-        <div class="d-flex justify-center gap-4">
-            <MudButton Href="/projects" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.Radar">
-                Radar de Proyectos
-            </MudButton>
-            <MudButton Href="/threads" Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Large" StartIcon="@Icons.Material.Filled.Code">
-                Muro de Código
-            </MudButton>
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16 text-center">
+    <!-- Status Badge -->
+    <div class="d-flex justify-center mb-6">
+        <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 20px; padding: 4px 16px; display: flex; align-items: center; gap: 8px;">
+            <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></div>
+            <MudText Typo="Typo.caption" Style="color: #60a5fa; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">v1.0.0 Deploy Stable</MudText>
         </div>
-    </MudPaper>
+    </div>
+
+    <MudText Typo="Typo.h1" Color="Color.Default" Class="mb-4" Style="font-weight: 800; letter-spacing: -2px; font-size: clamp(2.5rem, 8vw, 4.5rem); background: linear-gradient(to right, #f8fafc, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        Construye el futuro de la <span style="color: #3b82f6;">comunidad</span> dev.
+    </MudText>
+    
+    <MudText Typo="Typo.h5" Style="color: #94a3b8; max-width: 700px; margin: 0 auto;" Class="mb-10">
+        DevNest es el ecosistema donde los desarrolladores conectan, colaboran en proyectos open-source y comparten snippets de código en tiempo real.
+    </MudText>
+    
+    <div class="d-flex justify-center gap-6 mb-16">
+        <MudButton Href="/projects" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" 
+                   StartIcon="@Icons.Material.Rounded.RocketLaunch" Class="mud-button-filled" 
+                   Style="padding: 12px 32px; font-size: 1.1rem;">
+            Explorar Radar
+        </MudButton>
+        <MudButton Href="/threads" Variant="Variant.Outlined" Color="Color.Default" Size="Size.Large" 
+                   StartIcon="@Icons.Material.Rounded.AutoAwesome" 
+                   Style="padding: 12px 32px; font-size: 1.1rem; border-color: rgba(255,255,255,0.1); color: #f8fafc; text-transform: none;">
+            Muro de Código
+        </MudButton>
+    </div>
+
+    <!-- Terminal Preview Mockup -->
+    <div class="neon-card mx-auto" style="max-width: 800px; text-align: left; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+        <div style="background: rgba(15, 23, 42, 0.8); padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 8px;">
+            <div style="width: 12px; height: 12px; background: #ff5f56; border-radius: 50%;"></div>
+            <div style="width: 12px; height: 12px; background: #ffbd2e; border-radius: 50%;"></div>
+            <div style="width: 12px; height: 12px; background: #27c93f; border-radius: 50%;"></div>
+            <MudText Typo="Typo.caption" Class="ml-4" Style="color: #64748b; font-family: 'JetBrains Mono';">devnest_init.sh — 80x24</MudText>
+        </div>
+        <div style="padding: 24px; font-family: 'JetBrains Mono'; font-size: 0.9rem; line-height: 1.6;">
+            <div><span style="color: #10b981;">$</span> devnest login --github</div>
+            <div style="color: #94a3b8;">> Authenticating session... OK</div>
+            <div><span style="color: #10b981;">$</span> devnest projects --active</div>
+            <div style="color: #fbbf24;">[0] DevNest UI Rebranding (In Progress)</div>
+            <div style="color: #fbbf24;">[1] Fast API Backend (Stable)</div>
+            <div><span style="color: #10b981;">$</span> <span style="animation: blink 1s infinite;">_</span></div>
+        </div>
+    </div>
 </MudContainer>
+
+<style>
+    @@keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
+</style>

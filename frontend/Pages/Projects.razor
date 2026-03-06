@@ -4,8 +4,18 @@
 @inject NavigationManager NavigationManager
 
 <div class="d-flex justify-space-between align-center mb-6 mt-4">
-    <MudText Typo="Typo.h4" Color="Color.Primary"><b>Radar de Proyectos</b></MudText>
-    <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Add" OnClick="NavigateToCreate">Publicar Proyecto</MudButton>
+    <div class="d-flex align-center">
+        <div style="width: 40px; height: 40px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center;" class="mr-4">
+            <MudIcon Icon="@Icons.Material.Rounded.Radar" Color="Color.Primary" />
+        </div>
+        <div>
+            <MudText Typo="Typo.h4" Style="font-weight: 800; color: #f8fafc;">Radar de Proyectos</MudText>
+            <MudText Typo="Typo.caption" Style="color: #64748b; font-family: 'JetBrains Mono';">@projects?.Count() sistemas detectados en la red</MudText>
+        </div>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add" OnClick="NavigateToCreate" Class="mud-button-filled">
+        Publicar Proyecto
+    </MudButton>
 </div>
 
 @if (projects == null)
@@ -18,46 +28,48 @@ else if (!projects.Any())
 }
 else
 {
-    <MudGrid>
+    <MudGrid Spacing="4">
         @foreach (var project in projects)
         {
             <MudItem xs="12" sm="6" md="4">
-                <MudCard Elevation="3" Class="h-100 d-flex flex-column">
-                    <MudCardHeader>
+                <MudCard Elevation="0" Class="neon-card h-100 d-flex flex-column" Style="border-top: 4px solid #3b82f6 !important;">
+                    <MudCardHeader Class="pb-0">
                         <CardHeaderContent>
                             <div class="d-flex justify-space-between align-center mb-2">
-                                <MudText Typo="Typo.h6"><b>@project.title</b></MudText>
-                                @if (project.is_open)
-                                {
-                                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Abierto</MudChip>
-                                }
-                                else
-                                {
-                                    <MudChip T="string" Color="Color.Error" Size="Size.Small">Cerrado</MudChip>
-                                }
+                                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #f8fafc;">@project.title</MudText>
+                                <div style="width: 10px; height: 10px; border-radius: 50%; background: @(project.is_open ? "#10b981" : "#ef4444"); box-shadow: 0 0 10px @(project.is_open ? "#10b981" : "#ef4444");"></div>
                             </div>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">Publicado el: @project.created_at.ToString("dd/MMM/yyyy")</MudText>
                         </CardHeaderContent>
                     </MudCardHeader>
                     
-                    <MudCardContent Class="flex-grow-1">
-                        <MudText Typo="Typo.body1" Class="mb-4">@project.description</MudText>
+                    <MudCardContent Class="pt-2 flex-grow-1">
+                        <MudText Typo="Typo.body2" Style="color: #94a3b8; line-height: 1.6;" Class="mb-4">
+                            @project.description
+                        </MudText>
                         
-                        @if (!string.IsNullOrEmpty(project.roles_sought))
-                        {
-                            <MudText Typo="Typo.subtitle2" Class="mt-2"><b>Roles Buscados:</b></MudText>
-                            <div class="d-flex flex-wrap gap-1 mt-1">
-                                <!-- Dividimos el string asumiendo que vienen por comas -->
+                        <div class="d-flex flex-wrap gap-2 mt-auto">
+                            @if (!string.IsNullOrEmpty(project.roles_sought))
+                            {
                                 @foreach (var role in project.roles_sought.Split(',', StringSplitOptions.RemoveEmptyEntries))
                                 {
-                                    <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Outlined">@role.Trim()</MudChip>
+                                    <div style="font-size: 0.7rem; padding: 2px 8px; background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 4px;">
+                                        @role.Trim().ToUpper()
+                                    </div>
                                 }
-                            </div>
-                        }
+                            }
+                        </div>
                     </MudCardContent>
                     
-                    <MudCardActions Class="mt-auto pa-4">
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" FullWidth="true" Disabled="!project.is_open">Aplicar / Ver Detalle</MudButton>
+                    <MudCardActions Class="pa-4 pt-0">
+                        <MudDivider DividerType="DividerType.Middle" Class="mb-4" Style="background: rgba(255,255,255,0.05);" />
+                        <div class="d-flex justify-space-between align-center w-100">
+                            <MudText Typo="Typo.caption" Style="color: #64748b;">@project.created_at.ToString("dd MMM")</MudText>
+                            <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" EndIcon="@Icons.Material.Rounded.ArrowForward" 
+                                       Style="text-transform: none; font-weight: 600;"
+                                       Href="@($"/projects/{project.id}")">
+                                Detalles
+                            </MudButton>
+                        </div>
                     </MudCardActions>
                 </MudCard>
             </MudItem>

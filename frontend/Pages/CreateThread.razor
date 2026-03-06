@@ -24,26 +24,70 @@
                               Required="true"
                               Class="mb-4" />
 
-                <MudSelect T="string" Value="createModel.code_language" ValueChanged="OnLanguageChanged"
-                           Label="Lenguaje de Programación" 
-                           Variant="Variant.Outlined" 
-                           AnchorOrigin="Origin.BottomCenter"
-                           Required="true"
-                           Class="mb-4">
-                    <MudSelectItem Value="@("csharp")">C# / Blazor</MudSelectItem>
-                    <MudSelectItem Value="@("python")">Python / FastAPI</MudSelectItem>
-                    <MudSelectItem Value="@("javascript")">JavaScript / TypeScript</MudSelectItem>
-                    <MudSelectItem Value="@("html")">HTML / CSS</MudSelectItem>
-                    <MudSelectItem Value="@("sql")">Base de Datos / SQL</MudSelectItem>
-                    <MudSelectItem Value="@("plaintext")">Otro / Arquitectura</MudSelectItem>
-                </MudSelect>
+                <MudTextField @bind-Value="createModel.content" 
+                               Label="Mensaje o descripción del hilo" 
+                               Variant="Variant.Outlined" 
+                               Lines="4"
+                               For="@(() => createModel.content)"
+                               Required="true"
+                               Class="mb-6" />
 
-                <div class="mb-4" style="height: 300px; border: 1px solid var(--mud-palette-lines-default); border-radius: 4px; overflow: hidden; position: relative;">
-                    <StandaloneCodeEditor @ref="_editor" Id="monaco-editor" ConstructionOptions="EditorConstructionOptions" CssClass="monaco-editor-container" />
+                <div class="d-flex align-center mb-4">
+                    <MudIcon Icon="@Icons.Material.Rounded.Code" Color="Color.Secondary" Class="mr-2" />
+                    <MudText Typo="Typo.h6"><b>Fragmentos de Código</b></MudText>
+                    <MudSpacer />
+                    <MudButton StartIcon="@Icons.Material.Rounded.Add" 
+                               Variant="Variant.Outlined" 
+                               Color="Color.Secondary" 
+                               Size="Size.Small"
+                               OnClick="AddSnippet">Agregar Archivo</MudButton>
                 </div>
-                <!-- Hidden input to still trigger data binding validation if necessary -->
-                <InputText @bind-Value="createModel.content" style="display:none;" />
-                <ValidationMessage For="@(() => createModel.content)" class="mud-input-helper-text mud-input-error" />
+
+                @if (createModel.snippets.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-6">
+                        No has añadido ningún código. Puedes publicar solo el mensaje o añadir archivos.
+                    </MudAlert>
+                }
+
+                @foreach (var snippet in createModel.snippets.Select((value, index) => new { value, index }))
+                {
+                    <MudCard Elevation="0" Class="mb-6" Style="border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; background: rgba(15, 23, 42, 0.4);">
+                        <MudCardContent>
+                            <div class="d-flex align-center gap-4 mb-4">
+                                <MudTextField @bind-Value="snippet.value.filename" 
+                                               Label="Nombre del archivo (ej: main.py)" 
+                                               Variant="Variant.Outlined" 
+                                               Margin="Margin.Dense" />
+                                
+                                <MudSelect T="string" @bind-Value="snippet.value.language"
+                                           Label="Lenguaje" 
+                                           Variant="Variant.Outlined" 
+                                           Margin="Margin.Dense"
+                                           Style="min-width: 150px;">
+                                    <MudSelectItem Value="@("csharp")">C#</MudSelectItem>
+                                    <MudSelectItem Value="@("python")">Python</MudSelectItem>
+                                    <MudSelectItem Value="@("javascript")">JS / TS</MudSelectItem>
+                                    <MudSelectItem Value="@("html")">HTML</MudSelectItem>
+                                    <MudSelectItem Value="@("sql")">SQL</MudSelectItem>
+                                    <MudSelectItem Value="@("plaintext")">Texto</MudSelectItem>
+                                </MudSelect>
+
+                                <MudIconButton Icon="@Icons.Material.Rounded.Delete" 
+                                               Color="Color.Error" 
+                                               OnClick="@(() => RemoveSnippet(snippet.index))" />
+                            </div>
+
+                            <div style="height: 250px; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; overflow: hidden;">
+                                <StandaloneCodeEditor @ref="editors[snippet.index]" 
+                                                      Id="@($"editor-{snippet.index}")" 
+                                                      ConstructionOptions="@((e) => EditorOptions(e, snippet.value.language))" 
+                                                      CssClass="monaco-editor-container" />
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                }
+
 
                 <div class="d-flex justify-end">
                     <MudButton OnClick="GoBack" Variant="Variant.Text" Color="Color.Default" Class="mr-3">Cancelar</MudButton>
@@ -68,29 +112,30 @@
 </MudContainer>
 
 @code {
-    private ThreadCreateRequest createModel = new() { code_language = "csharp" };
+    private ThreadCreateRequest createModel = new();
     private bool isSubmitting = false;
-    private StandaloneCodeEditor _editor = null!;
+    private Dictionary<int, StandaloneCodeEditor> editors = new();
 
-    private StandaloneEditorConstructionOptions EditorConstructionOptions(StandaloneCodeEditor editor)
+    private StandaloneEditorConstructionOptions EditorOptions(StandaloneCodeEditor editor, string lang)
     {
         return new StandaloneEditorConstructionOptions
         {
-            Language = "csharp",
+            Language = lang,
             Theme = "vs-dark",
             AutomaticLayout = true,
             Minimap = new EditorMinimapOptions { Enabled = false }
         };
     }
 
-    private async Task OnLanguageChanged(string newLanguage)
+    private void AddSnippet()
     {
-        createModel.code_language = newLanguage;
-        if (_editor != null)
-        {
-            var model = await _editor.GetModel();
-            await BlazorMonaco.Editor.Global.SetModelLanguage(_jsRuntime, model, newLanguage);
-        }
+        createModel.snippets.Add(new ThreadSnippetCreate { language = "csharp", filename = "nuevo_archivo.cs" });
+    }
+
+    private void RemoveSnippet(int index)
+    {
+        createModel.snippets.RemoveAt(index);
+        editors.Remove(index);
     }
 
     private void GoBack()
@@ -104,12 +149,18 @@
         
         try
         {
-            // Extraer el código real desde Monaco Editor antes de hacer el POST
-            createModel.content = await _editor.GetValue();
+            // Extraer código de todos los editores
+            for (int i = 0; i < createModel.snippets.Count; i++)
+            {
+                if (editors.TryGetValue(i, out var editor))
+                {
+                    createModel.snippets[i].code = await editor.GetValue();
+                }
+            }
             
             if (string.IsNullOrWhiteSpace(createModel.content))
             {
-                Snackbar.Add("El código o contenido está vacío.", Severity.Warning);
+                Snackbar.Add("El mensaje principal no puede estar vacío.", Severity.Warning);
                 isSubmitting = false;
                 return;
             }
@@ -142,10 +193,16 @@
         [Required(ErrorMessage = "Debes ingresar un título.")]
         public string title { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El lenguaje es obligatorio.")]
-        public string code_language { get; set; } = string.Empty;
-
         [Required(ErrorMessage = "El contenido no puede estar vacío.")]
         public string content { get; set; } = string.Empty;
+
+        public List<ThreadSnippetCreate> snippets { get; set; } = new();
+    }
+
+    public class ThreadSnippetCreate
+    {
+        public string filename { get; set; } = "archivo.cs";
+        public string language { get; set; } = "csharp";
+        public string code { get; set; } = string.Empty;
     }
 }

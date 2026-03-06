@@ -35,8 +35,23 @@ def create_thread(thread: schemas.ThreadCreate, user_id: int, db: Session = Depe
     if not author:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
         
-    db_thread = models.Thread(**thread.model_dump(), author_id=user_id)
+    # Crear el hilo base
+    db_thread = models.Thread(
+        title=thread.title,
+        content=thread.content,
+        author_id=user_id
+    )
     db.add(db_thread)
+    db.flush() # Para obtener el ID antes de los snippets
+
+    # Crear los snippets asociados
+    for snippet_data in thread.snippets:
+        db_snippet = models.ThreadSnippet(
+            **snippet_data.model_dump(),
+            thread_id=db_thread.id
+        )
+        db.add(db_snippet)
+
     db.commit()
     db.refresh(db_thread)
     return db_thread

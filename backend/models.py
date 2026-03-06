@@ -41,12 +41,24 @@ class Thread(Base):
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     title = Column(String(150), nullable=False)
     content = Column(Text, nullable=False)
-    code_language = Column(String(50), nullable=True)  # Para Monaco Editor
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relaciones
     author = relationship("User", back_populates="threads")
+    snippets = relationship("ThreadSnippet", back_populates="thread", cascade="all, delete-orphan")
     replies = relationship("Reply", back_populates="thread", cascade="all, delete-orphan")
+
+class ThreadSnippet(Base):
+    __tablename__ = "thread_snippets"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    thread_id = Column(Integer, ForeignKey("threads.id"), nullable=False)
+    filename = Column(String(100), nullable=False)
+    language = Column(String(50), nullable=False)
+    code = Column(Text, nullable=False)
+    
+    # Relación inversa
+    thread = relationship("Thread", back_populates="snippets")
 
 class Reply(Base):
     __tablename__ = "replies"

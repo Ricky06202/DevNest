@@ -1,7 +1,37 @@
-﻿<MudNavMenu>
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Inicio</MudNavLink>
-    <MudNavLink Href="/projects" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Group">Radar de Proyectos</MudNavLink>
-    <MudNavLink Href="/threads" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Code">Muro de Código</MudNavLink>
+﻿<style>
+    /* Estilo Premium para Enlaces de Navegación */
+    .dev-nav-link {
+        margin: 4px 16px !important;
+        border-radius: 12px !important;
+        color: #94a3b8 !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        padding: 10px 16px !important;
+    }
+    .dev-nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.04) !important;
+        color: #f8fafc !important;
+        transform: scale(1.02);
+    }
+    .dev-nav-link.active {
+        background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, transparent 100%) !important;
+        color: #3b82f6 !important;
+        font-weight: 700 !important;
+        box-shadow: inset 4px 0 0 #3b82f6 !important;
+    }
+    
+    .mud-nav-link-icon-default {
+        margin-right: 16px !important;
+        transition: color 0.2s ease;
+    }
+    .dev-nav-link:hover .mud-nav-link-icon-default {
+        color: #3b82f6 !important;
+    }
+</style>
+
+<MudNavMenu>
+    <MudNavLink Class="dev-nav-link" Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Rounded.Dashboard">Inicio</MudNavLink>
+    <MudNavLink Class="dev-nav-link" Href="/projects" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Rounded.Radar">Radar de Proyectos</MudNavLink>
+    <MudNavLink Class="dev-nav-link" Href="/threads" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Rounded.Code">Muro de Código</MudNavLink>
 </MudNavMenu>
 
 @code {
