@@ -14,7 +14,7 @@
   <!-- Configuración para Producción (CPanel) -->
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <PublishTrimmed>true</PublishTrimmed>
-    <BlazorEnableCompression>false</BlazorEnableCompression>
+    <BlazorEnableCompression>true</BlazorEnableCompression>
   </PropertyGroup>
 
   <ItemGroup>

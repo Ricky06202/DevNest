@@ -4,5 +4,30 @@
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_URI} !^/api/
   RewriteRule . /index.html [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Prioridad Brotli (.br)
+    RewriteCond %{HTTP:Accept-Encoding} br
+    RewriteCond %{REQUEST_FILENAME}\.br -f
+    RewriteRule ^(.*)\.(js|css|wasm|dat)$ $1.$2.br [L,E=COMPRESSED:br]
+
+    # Fallback Gzip (.gz)
+    RewriteCond %{HTTP:Accept-Encoding} gzip
+    RewriteCond %{REQUEST_FILENAME}\.gz -f
+    RewriteRule ^(.*)\.(js|css|wasm|dat)$ $1.$2.gz [L,E=COMPRESSED:gzip]
+
+    # Headers necesarios para informar al navegador sobre la compresión
+    <FilesMatch "\.(js|css|wasm|dat)\.(br|gz)$">
+        Header set Content-Encoding %{COMPRESSED}e env=COMPRESSED
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+
+    # MIME types correctos (Corregido typo </FilesMenu> -> </FilesMatch>)
+    <FilesMatch "\.js\.(br|gz)$">   Header set Content-Type application/javascript </FilesMatch>
+    <FilesMatch "\.css\.(br|gz)$">  Header set Content-Type text/css </FilesMatch>
+    <FilesMatch "\.wasm\.(br|gz)$"> Header set Content-Type application/wasm </FilesMatch>
+    <FilesMatch "\.dat\.(br|gz)$">  Header set Content-Type application/octet-stream </FilesMatch>
 </IfModule>
