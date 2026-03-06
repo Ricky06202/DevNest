@@ -1,0 +1,44 @@
+name: Deploy Multi-Stack (Python & Blazor)
+
+on:
+  push:
+    branches: [ main ] # Se activa cuando haces push a la rama principal
+
+jobs:
+  # --- TRABAJO 1: COMPILAR Y SUBIR BLAZOR ---
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x' # Cambia a 9.0 si ya la usas
+
+      - name: Publish Blazor
+        run: dotnet publish frontend/ -c Release -o release-folder
+
+      - name: Deploy Frontend to cPanel (FTP)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./release-folder/wwwroot/ # Solo subimos lo compilado
+          server-dir: /devnest.rsanjur.com/ # Tu dominio de frontend
+
+  # --- TRABAJO 2: SUBIR PYTHON (SIN COMPILAR) ---
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy Backend to cPanel (FTP)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./backend/ # Subimos la carpeta tal cual
+          server-dir: /devnest.rsanjur.com/api/ # Tu subdominio o carpeta de la App Python
