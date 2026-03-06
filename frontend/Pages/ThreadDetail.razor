@@ -3,6 +3,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
 @using System.ComponentModel.DataAnnotations
 @using BlazorMonaco
 @using BlazorMonaco.Editor
@@ -30,7 +31,7 @@
                     <div class="d-flex align-center mt-2">
                         <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mr-3">
                             <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
-                            Usuario #@thread.author_id
+                            @thread.author_username
                         </MudText>
                         <MudText Typo="Typo.caption">@thread.created_at.ToString("dd MMM yyyy HH:mm")</MudText>
                         <MudSpacer />
@@ -82,7 +83,7 @@
                     <MudPaper Elevation="2" Class="pa-4" Style="@(reply.is_solution ? "border-left: 4px solid var(--mud-palette-success);" : "")">
                         <div class="d-flex justify-space-between align-center mb-2">
                             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                <b>Usuario #@reply.author_id</b> - @reply.created_at.ToString("dd MMM yyyy HH:mm")
+                                <b>@reply.author_username</b> - @reply.created_at.ToString("dd MMM yyyy HH:mm")
                             </MudText>
                             <div>
                                 @if (reply.is_solution)
@@ -203,8 +204,10 @@
         isReplying = true;
         try
         {
-            // user_id temporal hasta implementar en JWT
-            var response = await Http.PostAsJsonAsync($"threads/{Id}/replies?user_id=1", replyModel);
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst("user_id")?.Value ?? "1"; // Fallback a 1 si no hay
+            
+            var response = await Http.PostAsJsonAsync($"threads/{Id}/replies?user_id={userId}", replyModel);
             
             if (response.IsSuccessStatusCode)
             {
@@ -260,6 +263,7 @@
     {
         public int id { get; set; }
         public int author_id { get; set; }
+        public string author_username { get; set; } = string.Empty;
         public string title { get; set; } = string.Empty;
         public string content { get; set; } = string.Empty;
         public List<ThreadSnippetResponse> snippets { get; set; } = new();
@@ -281,6 +285,7 @@
         public int id { get; set; }
         public int thread_id { get; set; }
         public int author_id { get; set; }
+        public string author_username { get; set; } = string.Empty;
         public string content { get; set; } = string.Empty;
         public bool is_solution { get; set; }
         public DateTime created_at { get; set; }

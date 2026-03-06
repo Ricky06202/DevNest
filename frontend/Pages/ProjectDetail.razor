@@ -3,6 +3,8 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+@using System.ComponentModel.DataAnnotations
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
     <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" Color="Color.Default" OnClick="GoBack" Class="mb-4">Volver al Radar</MudButton>
@@ -26,7 +28,7 @@
                         <div>
                             <MudText Typo="Typo.h3" Color="Color.Primary" Class="mb-2"><b>@project.title</b></MudText>
                             <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                Creado por <b>Usuario #@project.owner_id</b> el @project.created_at.ToString("dd MMMM yyyy")
+                                Creado por <b>@project.owner_username</b> el @project.created_at.ToString("dd MMMM yyyy")
                             </MudText>
                         </div>
                         <div>
@@ -102,8 +104,13 @@
         finally
         {
             isLoading = false;
-            // Simulación: Usuario 1 es dueño de todos los proyectos para pruebas
-            isOwner = true; 
+            // Verificar si el usuario actual es el dueño
+            if (project != null)
+            {
+                var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+                var currentUserId = authState.User.FindFirst("user_id")?.Value;
+                isOwner = currentUserId != null && currentUserId == project.owner_id.ToString();
+            }
         }
     }
 
@@ -128,6 +135,7 @@
     {
         public int id { get; set; }
         public int owner_id { get; set; }
+        public string owner_username { get; set; } = string.Empty;
         public string title { get; set; } = string.Empty;
         public string description { get; set; } = string.Empty;
         public string? roles_sought { get; set; }

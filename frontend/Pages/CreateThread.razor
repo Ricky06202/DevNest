@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
 @inject IJSRuntime _jsRuntime
+@inject AuthenticationStateProvider AuthStateProvider
 @using System.ComponentModel.DataAnnotations
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
@@ -164,8 +165,10 @@
                 isSubmitting = false;
                 return;
             }
-            // Pasamos user_id 1 temporalmente hasta implementar extracción de Token en Backend
-            var response = await Http.PostAsJsonAsync("threads/?user_id=1", createModel);
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst("user_id")?.Value ?? "1"; // Fallback a 1 si no hay
+            
+            var response = await Http.PostAsJsonAsync($"threads/?user_id={userId}", createModel);
             
             if (response.IsSuccessStatusCode)
             {

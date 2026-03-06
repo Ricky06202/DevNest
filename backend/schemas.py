@@ -15,6 +15,7 @@ class ReplyResponse(ReplyBase):
     id: int
     thread_id: int
     author_id: int
+    author_username: str
     is_solution: bool
     created_at: datetime
 
@@ -52,6 +53,7 @@ class ThreadCreate(ThreadBase):
 class ThreadResponse(ThreadBase):
     id: int
     author_id: int
+    author_username: str
     created_at: datetime
     snippets: List[ThreadSnippetResponse] = []
     replies: List[ReplyResponse] = []
@@ -74,6 +76,7 @@ class ProjectCreate(ProjectBase):
 class ProjectResponse(ProjectBase):
     id: int
     owner_id: int
+    owner_username: str
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

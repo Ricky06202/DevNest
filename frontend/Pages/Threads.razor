@@ -42,6 +42,11 @@ else
                                 </div>
                             </div>
                             <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Rounded.Person" Size="Size.Small" Style="color: #64748b;" Class="mr-1" />
+                                <MudText Typo="Typo.caption" Style="@($"color: {(IsDarkMode ? "#64748b" : "#64748b")};")">
+                                    @thread.author_username
+                                </MudText>
+                                <MudText Typo="Typo.caption" Class="mx-2" Style="color: #64748b;">•</MudText>
                                 <MudText Typo="Typo.caption" Style="@($"color: {(IsDarkMode ? "#64748b" : "#64748b")};")">
                                     @thread.created_at.ToString("dd MMM yyyy")
                                 </MudText>
@@ -103,6 +108,7 @@ else
     {
         public int id { get; set; }
         public int author_id { get; set; }
+        public string author_username { get; set; } = string.Empty;
         public string title { get; set; } = string.Empty;
         public string content { get; set; } = string.Empty;
         public List<ThreadSnippetResponse> snippets { get; set; } = new();

@@ -34,6 +34,10 @@ class Project(Base):
     # Relación inversa
     owner = relationship("User", back_populates="projects")
 
+    @property
+    def owner_username(self) -> str:
+        return self.owner.username if self.owner else "Desconocido"
+
 class Thread(Base):
     __tablename__ = "threads"
     
@@ -47,6 +51,10 @@ class Thread(Base):
     author = relationship("User", back_populates="threads")
     snippets = relationship("ThreadSnippet", back_populates="thread", cascade="all, delete-orphan")
     replies = relationship("Reply", back_populates="thread", cascade="all, delete-orphan")
+
+    @property
+    def author_username(self) -> str:
+        return self.author.username if self.author else "Desconocido"
 
 class ThreadSnippet(Base):
     __tablename__ = "thread_snippets"
@@ -73,3 +81,7 @@ class Reply(Base):
     # Relaciones inversas
     thread = relationship("Thread", back_populates="replies")
     author = relationship("User", back_populates="replies")
+
+    @property
+    def author_username(self) -> str:
+        return self.author.username if self.author else "Desconocido"

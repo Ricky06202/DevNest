@@ -3,6 +3,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
 @using System.ComponentModel.DataAnnotations
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
@@ -131,8 +132,10 @@
         
         try
         {
-            // user_id=1 temporal
-            var response = await Http.PutAsJsonAsync($"projects/{Id}?user_id=1", editModel);
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst("user_id")?.Value ?? "1"; // Fallback if no ID
+            
+            var response = await Http.PutAsJsonAsync($"projects/{Id}?user_id={userId}", editModel);
             
             if (response.IsSuccessStatusCode)
             {

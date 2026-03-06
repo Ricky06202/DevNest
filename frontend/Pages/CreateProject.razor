@@ -3,6 +3,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
 @using System.ComponentModel.DataAnnotations
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
@@ -75,9 +76,10 @@
         
         try
         {
-            // NOTA: Temporalmente pasamos user_id 1 para que el API de Python no falle si requiere query param. 
-            // En una arquitectura final con JWT completo en el backend, FastAPI extraerá esto del token enviado por HttpClient.
-            var response = await Http.PostAsJsonAsync("projects/?user_id=1", createModel);
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst("user_id")?.Value ?? "1"; // Fallback a 1 si no hay
+            
+            var response = await Http.PostAsJsonAsync($"projects/?user_id={userId}", createModel);
             
             if (response.IsSuccessStatusCode)
             {
