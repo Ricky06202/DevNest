@@ -4,11 +4,16 @@
 @inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-10">
-    <MudCard Elevation="4">
-        <MudCardHeader Class="d-flex justify-center pb-0 mt-4">
-            <MudAvatar Color="Color.Secondary" Style="width: 100px; height: 100px; font-size: 3rem;">
-                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Large" />
-            </MudAvatar>
+    <MudCard Elevation="0" Class="neon-card pa-6">
+        <MudCardHeader Class="d-flex flex-column align-center pb-0 mt-4">
+            <div class="avatar-container mb-4">
+                <MudAvatar Color="Color.Secondary" Style="width: 120px; height: 120px; font-size: 3.5rem; background: rgba(59, 130, 246, 0.1); border: 2px solid rgba(59, 130, 246, 0.3);">
+                    <MudIcon Icon="@Icons.Material.Filled.Person" Style="font-size: 4rem;" />
+                </MudAvatar>
+                <div class="avatar-glow"></div>
+            </div>
+            <MudText Typo="Typo.h4" Style="font-weight: 800; color: #f8fafc; letter-spacing: -1px;">@username</MudText>
+            <MudText Typo="Typo.body1" Style="color: #3b82f6; font-family: 'JetBrains Mono'; font-size: 0.9rem;">@email</MudText>
         </MudCardHeader>
 
         <MudCardContent Class="text-center">
@@ -18,37 +23,75 @@
             }
             else
             {
-                <MudText Typo="Typo.h4" Class="mt-4 mb-1"><b>@username</b></MudText>
-                <MudText Typo="Typo.body1" Color="Color.Primary" Class="mb-6">@email</MudText>
+                <div class="d-flex justify-center gap-2 mt-4 mb-8">
+                    <div class="tech-pill">
+                        <MudIcon Icon="@Icons.Material.Rounded.Star" Size="Size.Small" Class="mr-1" />
+                        Junior / Mid
+                    </div>
+                    <div class="tech-pill" style="border-color: rgba(16, 185, 129, 0.2); color: #34d399;">
+                        <MudIcon Icon="@Icons.Material.Rounded.Verified" Size="Size.Small" Class="mr-1" />
+                        Verificado
+                    </div>
+                </div>
 
-                <MudDivider Class="mb-6" />
+                <MudDivider Style="background-color: rgba(255,255,255,0.05);" />
 
-                <div class="d-flex flex-column align-start mx-auto" style="max-width: 300px;">
-                    <MudText Typo="Typo.h6" Class="mb-2"><b>Sobre Mí</b></MudText>
-                    <MudText Typo="Typo.body2" Class="mb-4 text-left" Color="Color.Secondary">
-                        ¡Hola! Soy un desarrollador apasionado que acaba de unirse a DevNest. Listo para colaborar en proyectos increíbles y aprender de la comunidad.
+                <div class="d-flex flex-column align-start mx-auto mt-8" style="max-width: 320px;">
+                    <MudText Typo="Typo.subtitle2" Style="color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Biografía</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2 mb-6 text-left" Style="color: #94a3b8; line-height: 1.6;">
+                        Desarrollador enfocado en @(username.ToLower().Contains("dev") ? "soluciones Fullstack" : "crear experiencias increíbles"). Apasionado por la arquitectura limpia y la colaboración en DevNest.
                     </MudText>
 
-                    <div class="d-flex align-center mb-2">
-                        <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" Class="mr-2" />
-                        <MudText Typo="Typo.body2"><b>Experiencia:</b> Junior / Mid</MudText>
-                    </div>
-
-                    <div class="d-flex align-center mb-6">
-                        <MudIcon Icon="@Icons.Custom.Brands.GitHub" Color="Color.Default" Size="Size.Small" Class="mr-2" />
-                        <MudText Typo="Typo.body2"><b>GitHub:</b> @($"github.com/{username.ToLower()}")</MudText>
+                    <MudText Typo="Typo.subtitle2" Style="color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Conexiones</MudText>
+                    <div class="d-flex align-center mt-3 w-100 p-2" style="background: rgba(255,255,255,0.02); border-radius: 8px;">
+                        <MudIcon Icon="@Icons.Custom.Brands.GitHub" Color="Color.Default" Size="Size.Small" Class="mr-3" />
+                        <MudText Typo="Typo.body2" Style="color: #f8fafc; font-family: 'JetBrains Mono';">github.com/@username.ToLower()</MudText>
+                        <MudSpacer />
+                        <MudIcon Icon="@Icons.Material.Rounded.OpenInNew" Size="Size.Small" Style="color: #475569;" />
                     </div>
                 </div>
             }
         </MudCardContent>
 
-        <MudCardActions Class="d-flex justify-center pb-6">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" OnClick="ShowComingSoonMsg" StartIcon="@Icons.Material.Filled.Edit">
-                Editar Perfil
+        <MudCardActions Class="d-flex justify-center pb-8 mt-4">
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       Size="Size.Large" 
+                       OnClick="ShowComingSoonMsg" 
+                       StartIcon="@Icons.Material.Rounded.EditNote"
+                       Class="mud-button-filled px-8"
+                       Style="border-radius: 12px; font-weight: 700; text-transform: none;">
+                Configurar Perfil
             </MudButton>
         </MudCardActions>
     </MudCard>
 </MudContainer>
+
+<style>
+    .avatar-container {
+        position: relative;
+        display: inline-block;
+    }
+    .avatar-glow {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
+        filter: blur(20px);
+        z-index: -1;
+        opacity: 0.6;
+    }
+    .tech-pill {
+        display: flex;
+        align-items: center;
+        padding: 4px 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #94a3b8;
+    }
+</style>
 
 @code {
     private bool isLoading = true;

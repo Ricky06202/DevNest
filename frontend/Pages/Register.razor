@@ -3,44 +3,61 @@
 @inject NavigationManager NavigationManager
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-10">
-    <MudCard Elevation="4" Class="pa-4">
-        <MudCardHeader>
+    <MudCard Elevation="0" Class="pa-8 neon-card">
+        <MudCardHeader Class="flex-column align-center pb-6">
             <CardHeaderContent>
-                <MudText Typo="Typo.h5" Align="Align.Center"><b>Crear Cuenta</b></MudText>
-                <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">Únete a la comunidad de DevNest</MudText>
+                <div class="d-flex align-center justify-center mb-4">
+                    <div style="background: rgba(16, 185, 129, 0.1); padding: 12px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <MudIcon Icon="@Icons.Material.Rounded.PersonAdd" Color="Color.Success" Style="font-size: 2.5rem;" />
+                    </div>
+                </div>
+                <MudText Typo="Typo.h4" Align="Align.Center" Style="font-weight: 800; color: #f8fafc; letter-spacing: -1px;">
+                    Crear Cuenta
+                </MudText>
+                <MudText Typo="Typo.body2" Align="Align.Center" Style="color: #64748b;" Class="mt-1">
+                    Únete a la élite de desarrolladores en DevNest
+                </MudText>
             </CardHeaderContent>
         </MudCardHeader>
         <MudCardContent>
             @if (!string.IsNullOrEmpty(errorMessage))
             {
-                <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-6" Style="background: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.2); color: #fca5a5;">
+                    @errorMessage
+                </MudAlert>
             }
 
             <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
                 <DataAnnotationsValidator />
 
                 <MudTextField @bind-Value="registerModel.Username" 
-                              Label="Usuario (Alias)" 
-                              Variant="Variant.Outlined" 
-                              Margin="Margin.Dense"
-                              For="@(() => registerModel.Username)"
-                              Class="mb-4"/>
+                               Label="Usuario (Alias)" 
+                               Variant="Variant.Outlined" 
+                               Adornment="Adornment.Start"
+                               AdornmentIcon="@Icons.Material.Rounded.Badge"
+                               AdornmentColor="Color.Secondary"
+                               For="@(() => registerModel.Username)"
+                               Class="mb-4 register-input"/>
 
                 <MudTextField @bind-Value="registerModel.Email" 
-                              Label="Correo Electrónico" 
-                              InputType="InputType.Email"
-                              Variant="Variant.Outlined" 
-                              Margin="Margin.Dense"
-                              For="@(() => registerModel.Email)"
-                              Class="mb-4"/>
+                               Label="Correo Electrónico" 
+                               InputType="InputType.Email"
+                               Variant="Variant.Outlined" 
+                               Adornment="Adornment.Start"
+                               AdornmentIcon="@Icons.Material.Rounded.Email"
+                               AdornmentColor="Color.Secondary"
+                               For="@(() => registerModel.Email)"
+                               Class="mb-4 register-input"/>
 
                 <MudTextField @bind-Value="registerModel.Password" 
-                              Label="Contraseña" 
-                              InputType="InputType.Password" 
-                              Variant="Variant.Outlined" 
-                              Margin="Margin.Dense"
-                              For="@(() => registerModel.Password)"
-                              Class="mb-4"/>
+                               Label="Contraseña" 
+                               InputType="InputType.Password" 
+                               Variant="Variant.Outlined" 
+                               Adornment="Adornment.Start"
+                               AdornmentIcon="@Icons.Material.Rounded.Lock"
+                               AdornmentColor="Color.Secondary"
+                               For="@(() => registerModel.Password)"
+                               Class="mb-8 register-input"/>
 
                 <MudButton ButtonType="ButtonType.Submit" 
                            Variant="Variant.Filled" 
@@ -48,25 +65,39 @@
                            Size="Size.Large" 
                            FullWidth="true" 
                            Disabled="@isLoading"
-                           Class="mt-2">
+                           Class="mud-button-filled py-3"
+                           Style="font-weight: 700; text-transform: none; font-size: 1.1rem; border-radius: 12px; background-color: rgba(16, 185, 129, 0.12) !important; color: #34d399 !important; border: 1px solid rgba(16, 185, 129, 0.3) !important;">
                     @if (isLoading)
                     {
                         <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
-                        <MudText Class="ms-2">Procesando...</MudText>
+                        <span class="ms-3">Creando Perfil...</span>
                     }
                     else
                     {
-                        <MudText>Registrarse</MudText>
+                        <span>Inicializar Registro</span>
                     }
                 </MudButton>
             </EditForm>
         </MudCardContent>
-        <MudCardActions Class="justify-center mt-2">
-            <MudText>¿Ya tienes cuenta?</MudText>
-            <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/login">Inicia sesión aquí</MudButton>
+        <MudCardActions Class="justify-center mt-4">
+            <MudText Style="color: #64748b;">¿Ya eres miembro?</MudText>
+            <MudLink Href="/login" Color="Color.Primary" Underline="Underline.Hover" Class="ml-2" Style="font-weight: 600;">Inicia Sesión</MudLink>
         </MudCardActions>
     </MudCard>
 </MudContainer>
+
+<style>
+    .register-input :deep(.mud-input-outlined-border) {
+        border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    .register-input :deep(.mud-input-label) {
+        color: #94a3b8 !important;
+    }
+    .register-input :deep(input) {
+        color: #f8fafc !important;
+        font-family: 'Inter', sans-serif;
+    }
+</style>
 
 @code {
     private RegisterRequest registerModel = new();
