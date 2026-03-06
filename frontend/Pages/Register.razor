@@ -11,10 +11,10 @@
                         <MudIcon Icon="@Icons.Material.Rounded.PersonAdd" Color="Color.Success" Style="font-size: 2.5rem;" />
                     </div>
                 </div>
-                <MudText Typo="Typo.h4" Align="Align.Center" Style="font-weight: 800; color: #f8fafc; letter-spacing: -1px;">
+                <MudText Typo="Typo.h4" Align="Align.Center" Style="@($"font-weight: 800; color: {(IsDarkMode ? "#f8fafc" : "#0f172a")}; letter-spacing: -1px;")">
                     Crear Cuenta
                 </MudText>
-                <MudText Typo="Typo.body2" Align="Align.Center" Style="color: #64748b;" Class="mt-1">
+                <MudText Typo="Typo.body2" Align="Align.Center" Style="@($"color: {(IsDarkMode ? "#64748b" : "#475569")};")" Class="mt-1">
                     Únete a la élite de desarrolladores en DevNest
                 </MudText>
             </CardHeaderContent>
@@ -22,7 +22,7 @@
         <MudCardContent>
             @if (!string.IsNullOrEmpty(errorMessage))
             {
-                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-6" Style="background: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.2); color: #fca5a5;">
+                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-6" Style="@($"background: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.2); color: {(IsDarkMode ? "#fca5a5" : "#b91c1c")};")">
                     @errorMessage
                 </MudAlert>
             }
@@ -66,7 +66,7 @@
                            FullWidth="true" 
                            Disabled="@isLoading"
                            Class="mud-button-filled py-3"
-                           Style="font-weight: 700; text-transform: none; font-size: 1.1rem; border-radius: 12px; background-color: rgba(16, 185, 129, 0.12) !important; color: #34d399 !important; border: 1px solid rgba(16, 185, 129, 0.3) !important;">
+                           Style="@($"font-weight: 700; text-transform: none; font-size: 1.1rem; border-radius: 12px; background-color: {(IsDarkMode ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.15)")} !important; color: {(IsDarkMode ? "#34d399" : "#059669")} !important; border: 1px solid rgba(16, 185, 129, 0.3) !important;")">
                     @if (isLoading)
                     {
                         <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
@@ -80,7 +80,7 @@
             </EditForm>
         </MudCardContent>
         <MudCardActions Class="justify-center mt-4">
-            <MudText Style="color: #64748b;">¿Ya eres miembro?</MudText>
+            <MudText Style="@($"color: {(IsDarkMode ? "#64748b" : "#475569")};")">¿Ya eres miembro?</MudText>
             <MudLink Href="/login" Color="Color.Primary" Underline="Underline.Hover" Class="ml-2" Style="font-weight: 600;">Inicia Sesión</MudLink>
         </MudCardActions>
     </MudCard>
@@ -88,18 +88,21 @@
 
 <style>
     .register-input :deep(.mud-input-outlined-border) {
-        border-color: rgba(255, 255, 255, 0.08) !important;
+        border-color: @(IsDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.1)") !important;
     }
     .register-input :deep(.mud-input-label) {
-        color: #94a3b8 !important;
+        color: @(IsDarkMode ? "#94a3b8" : "#475569") !important;
     }
     .register-input :deep(input) {
-        color: #f8fafc !important;
+        color: @(IsDarkMode ? "#f8fafc" : "#0f172a") !important;
         font-family: 'Inter', sans-serif;
     }
 </style>
 
 @code {
+    [CascadingParameter(Name = "IsDarkMode")]
+    public bool IsDarkMode { get; set; }
+
     private RegisterRequest registerModel = new();
     private bool isLoading = false;
     private string? errorMessage;

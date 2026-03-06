@@ -9,8 +9,8 @@
             <MudIcon Icon="@Icons.Material.Rounded.Code" Color="Color.Secondary" />
         </div>
         <div>
-            <MudText Typo="Typo.h4" Style="font-weight: 800; color: #f8fafc;">Muro de Código</MudText>
-            <MudText Typo="Typo.caption" Style="color: #64748b; font-family: 'JetBrains Mono';">Intercambio de conocimiento técnico</MudText>
+            <MudText Typo="Typo.h4" Style="@($"font-weight: 800; color: {(IsDarkMode ? "#f8fafc" : "#0f172a")};")">Muro de Código</MudText>
+            <MudText Typo="Typo.caption" Style="@($"color: {(IsDarkMode ? "#64748b" : "#475569")}; font-family: 'JetBrains Mono';")">Intercambio de conocimiento técnico</MudText>
         </div>
     </div>
     <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Rounded.Add" OnClick="NavigateToCreate" Class="mud-button-filled">
@@ -36,13 +36,13 @@ else
                     <MudCardHeader Class="pb-2">
                         <CardHeaderContent>
                             <div class="d-flex justify-space-between align-center mb-1">
-                                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #f8fafc;">@thread.title</MudText>
-                                <div style="font-size: 0.65rem; font-family: 'JetBrains Mono'; padding: 2px 6px; background: rgba(139, 92, 246, 0.1); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 4px;">
+                                <MudText Typo="Typo.h6" Style="@($"font-weight: 700; color: {(IsDarkMode ? "#f8fafc" : "#0f172a")};")">@thread.title</MudText>
+                                <div style="@($"font-size: 0.65rem; font-family: 'JetBrains Mono'; padding: 2px 6px; background: rgba(139, 92, 246, 0.1); color: {(IsDarkMode ? "#a78bfa" : "#7c3aed")}; border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 4px;")">
                                     @(thread.snippets.Count == 0 ? "POST" : $"{thread.snippets.Count} ARCHIVOS")
                                 </div>
                             </div>
                             <div class="d-flex align-center">
-                                <MudText Typo="Typo.caption" Style="color: #64748b;">
+                                <MudText Typo="Typo.caption" Style="@($"color: {(IsDarkMode ? "#64748b" : "#64748b")};")">
                                     @thread.created_at.ToString("dd MMM yyyy")
                                 </MudText>
                                 @if (thread.snippets.Count > 0)
@@ -56,7 +56,7 @@ else
                     </MudCardHeader>
                     
                     <MudCardContent Class="pt-2 flex-grow-1">
-                        <MudText Typo="Typo.body2" Style="color: #94a3b8; line-height: 1.6;">
+                        <MudText Typo="Typo.body2" Style="@($"color: {(IsDarkMode ? "#94a3b8" : "#475569")}; line-height: 1.6;")">
                             @(thread.content.Length > 120 ? thread.content.Substring(0, 120) + "..." : thread.content)
                         </MudText>
                     </MudCardContent>
@@ -76,6 +76,9 @@ else
 }
 
 @code {
+    [CascadingParameter(Name = "IsDarkMode")]
+    public bool IsDarkMode { get; set; }
+
     private List<ThreadResponse>? threads;
 
     protected override async Task OnInitializedAsync()
@@ -96,7 +99,6 @@ else
         NavigationManager.NavigateTo("/threads/new");
     }
 
-    // --- DTO CLASSES EN BLOQUE @CODE ---
     public class ThreadResponse
     {
         public int id { get; set; }

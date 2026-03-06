@@ -9,8 +9,8 @@
             <MudIcon Icon="@Icons.Material.Rounded.Radar" Color="Color.Primary" />
         </div>
         <div>
-            <MudText Typo="Typo.h4" Style="font-weight: 800; color: #f8fafc;">Radar de Proyectos</MudText>
-            <MudText Typo="Typo.caption" Style="color: #64748b; font-family: 'JetBrains Mono';">@projects?.Count() sistemas detectados en la red</MudText>
+            <MudText Typo="Typo.h4" Style="@($"font-weight: 800; color: {(IsDarkMode ? "#f8fafc" : "#0f172a")};")">Radar de Proyectos</MudText>
+            <MudText Typo="Typo.caption" Style="@($"color: {(IsDarkMode ? "#64748b" : "#475569")}; font-family: 'JetBrains Mono';")">@projects?.Count() sistemas detectados en la red</MudText>
         </div>
     </div>
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add" OnClick="NavigateToCreate" Class="mud-button-filled">
@@ -36,14 +36,14 @@ else
                     <MudCardHeader Class="pb-0">
                         <CardHeaderContent>
                             <div class="d-flex justify-space-between align-center mb-2">
-                                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #f8fafc;">@project.title</MudText>
+                                <MudText Typo="Typo.h6" Style="@($"font-weight: 700; color: {(IsDarkMode ? "#f8fafc" : "#0f172a")};")">@project.title</MudText>
                                 <div style="width: 10px; height: 10px; border-radius: 50%; background: @(project.is_open ? "#10b981" : "#ef4444"); box-shadow: 0 0 10px @(project.is_open ? "#10b981" : "#ef4444");"></div>
                             </div>
                         </CardHeaderContent>
                     </MudCardHeader>
                     
                     <MudCardContent Class="pt-2 flex-grow-1">
-                        <MudText Typo="Typo.body2" Style="color: #94a3b8; line-height: 1.6;" Class="mb-4">
+                        <MudText Typo="Typo.body2" Style="@($"color: {(IsDarkMode ? "#94a3b8" : "#475569")}; line-height: 1.6;")" Class="mb-4">
                             @project.description
                         </MudText>
                         
@@ -52,7 +52,7 @@ else
                             {
                                 @foreach (var role in project.roles_sought.Split(',', StringSplitOptions.RemoveEmptyEntries))
                                 {
-                                    <div style="font-size: 0.7rem; padding: 2px 8px; background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 4px;">
+                                    <div style="@($"font-size: 0.7rem; padding: 2px 8px; background: rgba(59, 130, 246, 0.1); color: {(IsDarkMode ? "#60a5fa" : "#2563eb")}; border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 4px;")">
                                         @role.Trim().ToUpper()
                                     </div>
                                 }
@@ -61,9 +61,9 @@ else
                     </MudCardContent>
                     
                     <MudCardActions Class="pa-4 pt-0">
-                        <MudDivider DividerType="DividerType.Middle" Class="mb-4" Style="background: rgba(255,255,255,0.05);" />
+                        <MudDivider DividerType="DividerType.Middle" Class="mb-4" Style="@($"background: {(IsDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)")};")" />
                         <div class="d-flex justify-space-between align-center w-100">
-                            <MudText Typo="Typo.caption" Style="color: #64748b;">@project.created_at.ToString("dd MMM")</MudText>
+                            <MudText Typo="Typo.caption" Style="@($"color: {(IsDarkMode ? "#64748b" : "#64748b")};")">@project.created_at.ToString("dd MMM")</MudText>
                             <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" EndIcon="@Icons.Material.Rounded.ArrowForward" 
                                        Style="text-transform: none; font-weight: 600;"
                                        Href="@($"/projects/{project.id}")">
@@ -78,19 +78,21 @@ else
 }
 
 @code {
+    [CascadingParameter(Name = "IsDarkMode")]
+    public bool IsDarkMode { get; set; }
+
     private List<ProjectResponse>? projects;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // El HttpClient de Program.cs ya inyecta el token Bearer y apunta a :8000
             projects = await Http.GetFromJsonAsync<List<ProjectResponse>>("api/projects/");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error cargando proyectos: {ex.Message}");
-            projects = new List<ProjectResponse>(); // Evitar null spinner si falla
+            projects = new List<ProjectResponse>();
         }
     }
 
@@ -99,7 +101,6 @@ else
         NavigationManager.NavigateTo("/projects/new");
     }
 
-    // --- DTO CLASSES EXCLUSIVOS EN BLOQUE @CODE (REGLA ESTRICTA) ---
     public class ProjectResponse
     {
         public int id { get; set; }

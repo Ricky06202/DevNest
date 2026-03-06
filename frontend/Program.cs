@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using frontend;
 using frontend.Providers;
 using MudBlazor.Services;
+using Blazored.LocalStorage;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -21,5 +22,6 @@ builder.Services.AddScoped<AuthenticationStateProvider>(s => s.GetRequiredServic
 builder.Services.AddScoped<AuthService>();
 
 builder.Services.AddMudServices();
+builder.Services.AddBlazoredLocalStorage();
 
 await builder.Build().RunAsync();

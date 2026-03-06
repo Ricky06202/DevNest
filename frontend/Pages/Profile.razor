@@ -12,7 +12,7 @@
                 </MudAvatar>
                 <div class="avatar-glow"></div>
             </div>
-            <MudText Typo="Typo.h4" Style="font-weight: 800; color: #f8fafc; letter-spacing: -1px;">@username</MudText>
+            <MudText Typo="Typo.h4" Style="@($"font-weight: 800; color: {(IsDarkMode ? "#f8fafc" : "#0f172a")}; letter-spacing: -1px;")">@username</MudText>
             <MudText Typo="Typo.body1" Style="color: #3b82f6; font-family: 'JetBrains Mono'; font-size: 0.9rem;">@email</MudText>
         </MudCardHeader>
 
@@ -34,18 +34,18 @@
                     </div>
                 </div>
 
-                <MudDivider Style="background-color: rgba(255,255,255,0.05);" />
+                <MudDivider Style="@($"background-color: {(IsDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)")};")" />
 
                 <div class="d-flex flex-column align-start mx-auto mt-8" style="max-width: 320px;">
-                    <MudText Typo="Typo.subtitle2" Style="color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Biografía</MudText>
-                    <MudText Typo="Typo.body2" Class="mt-2 mb-6 text-left" Style="color: #94a3b8; line-height: 1.6;">
+                    <MudText Typo="Typo.subtitle2" Style="@($"color: {(IsDarkMode ? "#64748b" : "#475569")}; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;")">Biografía</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2 mb-6 text-left" Style="@($"color: {(IsDarkMode ? "#94a3b8" : "#334155")}; line-height: 1.6;")">
                         Desarrollador enfocado en @(username.ToLower().Contains("dev") ? "soluciones Fullstack" : "crear experiencias increíbles"). Apasionado por la arquitectura limpia y la colaboración en DevNest.
                     </MudText>
 
-                    <MudText Typo="Typo.subtitle2" Style="color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Conexiones</MudText>
-                    <div class="d-flex align-center mt-3 w-100 p-2" style="background: rgba(255,255,255,0.02); border-radius: 8px;">
+                    <MudText Typo="Typo.subtitle2" Style="@($"color: {(IsDarkMode ? "#64748b" : "#475569")}; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;")">Conexiones</MudText>
+                    <div class="d-flex align-center mt-3 w-100 p-2" style="@($"background: {(IsDarkMode ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.03)")}; border-radius: 8px;")">
                         <MudIcon Icon="@Icons.Custom.Brands.GitHub" Color="Color.Default" Size="Size.Small" Class="mr-3" />
-                        <MudText Typo="Typo.body2" Style="color: #f8fafc; font-family: 'JetBrains Mono';">github.com/@username.ToLower()</MudText>
+                        <MudText Typo="Typo.body2" Style="@($"color: {(IsDarkMode ? "#f8fafc" : "#0f172a")}; font-family: 'JetBrains Mono';")">github.com/@username.ToLower()</MudText>
                         <MudSpacer />
                         <MudIcon Icon="@Icons.Material.Rounded.OpenInNew" Size="Size.Small" Style="color: #475569;" />
                     </div>
@@ -84,16 +84,19 @@
         display: flex;
         align-items: center;
         padding: 4px 12px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: @(IsDarkMode ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.03)");
+        border: 1px solid @(IsDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)");
         border-radius: 20px;
         font-size: 0.75rem;
         font-weight: 600;
-        color: #94a3b8;
+        color: @(IsDarkMode ? "#94a3b8" : "#475569");
     }
 </style>
 
 @code {
+    [CascadingParameter(Name = "IsDarkMode")]
+    public bool IsDarkMode { get; set; }
+
     private bool isLoading = true;
     private string username = "Usuario";
     private string email = "cargando@devnest.com";
@@ -109,7 +112,6 @@
 
             if (user.Identity is not null && user.Identity.IsAuthenticated)
             {
-                // Extraer los claims que inyectamos manualmente en CustomAuthenticationStateProvider
                 username = user.Identity.Name ?? user.FindFirst(c => c.Type == "sub")?.Value ?? "Desconocido";
                 email = user.FindFirst(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value 
                         ?? $"{username.ToLower()}@devnest.local";
