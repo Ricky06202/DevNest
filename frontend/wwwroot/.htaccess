@@ -1,47 +1,18 @@
+# .htaccess simplificado para estabilidad máxima (Sin Compresión)
 <IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-
-  # 1. Compresión (Brotli/Gzip) con FORZADO de MIME Types
-  # Esto evita que el navegador reciba "application/octet-stream" para archivos .br/.gz
-  <IfModule mod_headers.c>
-    # BROTLI
-    RewriteCond %{HTTP:Accept-Encoding} br
-    RewriteCond %{REQUEST_FILENAME}\.br -f
-    RewriteRule ^(.*)\.js$   $1.js.br   [L,E=COMPRESSED:br,T=text/javascript]
+    RewriteEngine On
+    RewriteBase /
+    RewriteRule ^index\.html$ - [L]
     
-    RewriteCond %{HTTP:Accept-Encoding} br
-    RewriteCond %{REQUEST_FILENAME}\.br -f
-    RewriteRule ^(.*)\.css$  $1.css.br  [L,E=COMPRESSED:br,T=text/css]
-
-    RewriteCond %{HTTP:Accept-Encoding} br
-    RewriteCond %{REQUEST_FILENAME}\.br -f
-    RewriteRule ^(.*)\.wasm$ $1.wasm.br [L,E=COMPRESSED:br,T=application/wasm]
-
-    # GZIP
-    RewriteCond %{HTTP:Accept-Encoding} gzip
-    RewriteCond %{REQUEST_FILENAME}\.gz -f
-    RewriteRule ^(.*)\.js$   $1.js.gz   [L,E=COMPRESSED:gzip,T=text/javascript]
-
-    RewriteCond %{HTTP:Accept-Encoding} gzip
-    RewriteCond %{REQUEST_FILENAME}\.gz -f
-    RewriteRule ^(.*)\.css$  $1.css.gz  [L,E=COMPRESSED:gzip,T=text/css]
-
-    RewriteCond %{HTTP:Accept-Encoding} gzip
-    RewriteCond %{REQUEST_FILENAME}\.gz -f
-    RewriteRule ^(.*)\.wasm$ $1.wasm.gz [L,E=COMPRESSED:gzip,T=application/wasm]
-
-    # Headers necesarios para informar al navegador sobre la compresión
-    <FilesMatch "\.(js|css|wasm|dat)\.(br|gz)$">
-        Header set Content-Encoding %{COMPRESSED}e env=COMPRESSED
-        Header append Vary Accept-Encoding
-    </FilesMatch>
-  </IfModule>
-
-  # 2. Rutas de la SPA (Blazor)
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_URI} !^/api/
-  RewriteRule . /index.html [L]
+    # NO redirigir archivos que existen físicamente (CSS, JS, imágenes, etc.)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    
+    # Excluir la carpeta /api del ruteo de Blazor
+    RewriteCond %{REQUEST_URI} ^/api/
+    RewriteRule ^ - [L]
+    
+    # Redirigir el resto al index para manejo de SPA
+    RewriteRule ^(.*)$ index.html [L]
 </IfModule>
