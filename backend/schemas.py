@@ -54,6 +54,7 @@ class ThreadResponse(ThreadBase):
     author_id: int
     created_at: datetime
     snippets: List[ThreadSnippetResponse] = []
+    replies: List[ReplyResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
