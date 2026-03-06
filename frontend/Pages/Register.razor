@@ -112,15 +112,15 @@
         isLoading = true;
         errorMessage = null;
 
-        var success = await AuthService.RegisterAsync(registerModel);
+        var result = await AuthService.RegisterAsync(registerModel);
 
-        if (success)
+        if (result.Success)
         {
             NavigationManager.NavigateTo("/login");
         }
         else
         {
-            errorMessage = "No se pudo completar el registro. Intente con un alias o correo diferente.";
+            errorMessage = result.ErrorMessage;
         }
 
         isLoading = false;

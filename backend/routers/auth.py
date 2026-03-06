@@ -65,3 +65,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     )
     
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.get("/debug/users")
+def get_all_users(db: Session = Depends(database.get_db)):
+    users = db.query(models.User).all()
+    return [{"id": u.id, "username": u.username, "email": u.email} for u in users]

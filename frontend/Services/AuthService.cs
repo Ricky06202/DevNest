@@ -49,10 +49,25 @@ namespace frontend.Providers
             return false;
         }
 
-        public async Task<bool> RegisterAsync(RegisterRequest request)
+        public async Task<AuthResult> RegisterAsync(RegisterRequest request)
         {
             var response = await _httpClient.PostAsJsonAsync("register", request);
-            return response.IsSuccessStatusCode;
+            if (response.IsSuccessStatusCode)
+            {
+                return new AuthResult { Success = true };
+            }
+            
+            var error = "Ocurrió un error en el registro.";
+            try 
+            {
+                var errorData = await response.Content.ReadFromJsonAsync<JsonElement>();
+                if (errorData.TryGetProperty("detail", out var detail))
+                {
+                    error = detail.GetString() ?? error;
+                }
+            } catch { /* Ignorar error de parseo */ }
+
+            return new AuthResult { Success = false, ErrorMessage = error };
         }
 
         public async Task LogoutAsync()
@@ -61,5 +76,11 @@ namespace frontend.Providers
             _authStateProvider.NotifyUserLogout();
             _httpClient.DefaultRequestHeaders.Authorization = null;
         }
+    }
+
+    public class AuthResult
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
     }
 }
