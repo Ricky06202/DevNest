@@ -8,7 +8,7 @@ import schemas
 
 # Usar el router sin prefijo para que encaje como "api/projects" o simlilar desde main
 router = APIRouter(
-    prefix="/api/projects",
+    prefix="/projects",
     tags=["Projects (Matchmaking Radar)"]
 )
 

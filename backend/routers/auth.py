@@ -7,7 +7,7 @@ import schemas
 import security
 
 router = APIRouter(
-    prefix="/api",
+    prefix="",
     tags=["Authentication"]
 )
 

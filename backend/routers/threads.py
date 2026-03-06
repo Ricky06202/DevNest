@@ -7,7 +7,7 @@ import models
 import schemas
 
 router = APIRouter(
-    prefix="/api/threads",
+    prefix="/threads",
     tags=["Code Review Threads"]
 )
 
