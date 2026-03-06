@@ -61,11 +61,33 @@
         border-color: rgba(59, 130, 246, 0.6) !important;
     }
     
-    .mud-layout { background-color: transparent !important; }
+    /* Deep dark base for the whole application */
+    .mud-layout { 
+        background-color: #0b0f19 !important; 
+        background-image: radial-gradient(circle at 50% 0%, #171e36 0%, #0b0f19 75%) !important;
+        background-attachment: fixed !important;
+    }
+    
     .mud-main-content { 
         background-color: transparent !important; 
         min-height: 100vh;
         padding-top: 100px !important;
+        position: relative;
+    }
+
+    /* Opcional: Capa de profundidad sutil para evitar distracciones de fondos externos */
+    .mud-main-content::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(11, 15, 25, 0.4);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .mud-container {
+        position: relative;
+        z-index: 1;
     }
     
     /* Breadcrumb/Path style */
@@ -163,7 +185,7 @@
             Primary = "#3b82f6",          // Blue 500 (Elegante y confiable)
             Secondary = "#8b5cf6",        // Violet 500 (Acento moderno)
             Tertiary = "#10b981",         // Emerald 500 (Éxito/Acciones)
-            Background = "rgba(0,0,0,0)", // Color transparente seguro para MudColor Parser
+            Background = "#0b0f19",       // Fondo sólido para garantizar legibilidad
             Surface = "#1e293b",          // Slate 800 (Tarjetas limpias sólidas si no usan blur)
             AppbarBackground = "rgba(15, 23, 42, 0.7)", // Slate 900 semi-transparente
             DrawerBackground = "rgba(15, 23, 42, 0.95)", // Slate 900

@@ -1,0 +1,31 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Prioridad Brotli (.br)
+    RewriteCond %{HTTP:Accept-Encoding} br
+    RewriteCond %{REQUEST_FILENAME}\.br -f
+    RewriteRule ^(.*)\.(js|css|wasm|dat)$ $1.$2.br [L]
+
+    # Fallback Gzip (.gz)
+    RewriteCond %{HTTP:Accept-Encoding} gzip
+    RewriteCond %{REQUEST_FILENAME}\.gz -f
+    RewriteRule ^(.*)\.(js|css|wasm|dat)$ $1.$2.gz [L]
+
+    # Headers necesarios para que el navegador sepa qué está recibiendo
+    <FilesMatch "\.(js|css|wasm|dat)\.(br|gz)$">
+        Header set Content-Encoding %{1}e
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+
+    # Asignar MIME types correctos a los archivos comprimidos
+    <FilesMatch "\.js\.(br|gz)$">   Header set Content-Type application/javascript </FilesMenu>
+    <FilesMatch "\.css\.(br|gz)$">  Header set Content-Type text/css </FilesMatch>
+    <FilesMatch "\.wasm\.(br|gz)$"> Header set Content-Type application/wasm </FilesMatch>
+</IfModule>
