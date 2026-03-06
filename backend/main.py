@@ -20,9 +20,7 @@ app.include_router(threads.router)
 origins = [
     "http://localhost:5000",
     "https://localhost:5001",
-    "http://localhost:5147",
-    "https://localhost:7147",
-    # Añadiremos el dominio de producción aquí más adelante
+    "https://devnest.rsanjur.com", # Dominio de producción
 ]
 
 app.add_middleware(

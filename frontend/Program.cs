@@ -9,8 +9,10 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Set base address properly to backend API (or localhost:8000 for debug)
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:8000/") });
+// Configurar BaseAddress apuntando dinámicamente al backend remoto
+// Añadiendo explícitamente la ruta /api/ como solicitaste para encontrar los endpoints.
+var backendUrl = "https://devnest.rsanjur.com/api/";
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(backendUrl) });
 
 // Register Auth services
 builder.Services.AddAuthorizationCore();
