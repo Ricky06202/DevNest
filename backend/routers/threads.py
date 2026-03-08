@@ -86,7 +86,11 @@ def mark_solution(reply_id: int, db: Session = Depends(database.get_db)):
     if not reply:
         raise HTTPException(status_code=404, detail="Respuesta no encontrada")
         
-    reply.is_solution = True
+    if not reply.is_solution:
+        reply.is_solution = True
+        if reply.author:
+            reply.author.karma += 10
+            
     db.commit()
     db.refresh(reply)
     return reply

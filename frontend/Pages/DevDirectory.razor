@@ -1,0 +1,157 @@
+@page "/developers"
+@attribute [Authorize]
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <MudText Typo="Typo.h3" Color="Color.Secondary" Class="mb-2"><b>Directorio Dev</b></MudText>
+    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-8">Encuentra talento o conoce a otros desarrolladores en la red.</MudText>
+
+    <!-- Barra de Búsqueda -->
+    <div class="mb-8 p-4" style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;">
+        <MudGrid>
+            <MudItem xs="12" md="8">
+                <MudTextField @bind-Value="searchQuery" 
+                              Placeholder="Buscar por tecnología, usuario o nivel..." 
+                              Adornment="Adornment.Start" 
+                              AdornmentIcon="@Icons.Material.Filled.Search" 
+                              Variant="Variant.Outlined" 
+                              Immediate="true"
+                              OnKeyUp="FilterUsers"
+                              Clearable="true" />
+            </MudItem>
+            <MudItem xs="12" md="4" Class="d-flex align-center">
+                <MudText Typo="Typo.body2" Color="Color.Secondary"><b>@filteredUsers.Count</b> desarrolladores encontrados.</MudText>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="d-flex justify-center mt-10">
+            <MudProgressCircular Color="Color.Secondary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else if (!filteredUsers.Any())
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">No se encontraron desarrolladores que coincidan con tu búsqueda.</MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var user in filteredUsers)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Elevation="3" Class="neon-card h-100 d-flex flex-column">
+                        <MudCardHeader Class="pb-0">
+                            <CardHeaderContent>
+                                <div class="d-flex align-center gap-3">
+                                    <MudAvatar Color="Color.Primary" Variant="Variant.Filled">
+                                        @user.username.Substring(0, 1).ToUpper()
+                                    </MudAvatar>
+                                    <div>
+                                        <MudText Typo="Typo.subtitle1"><b>@user.username</b></MudText>
+                                        <div class="d-flex align-center gap-2">
+                                            @if (!string.IsNullOrEmpty(user.experience_level))
+                                            {
+                                                <MudText Typo="Typo.caption" Color="Color.Success">@user.experience_level</MudText>
+                                            }
+                                            <MudChip T="string" Size="Size.Small" Color="@(user.karma >= 100 ? Color.Warning : Color.Surface)" Icon="@Icons.Material.Filled.LocalFireDepartment" Variant="Variant.Text" Style="font-size: 0.70rem; padding: 0 4px; height: 20px;">@user.karma</MudChip>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+
+                        <MudCardContent Class="py-4 flex-grow-1">
+                            @if (!string.IsNullOrEmpty(user.bio))
+                            {
+                                <MudText Typo="Typo.body2" Class="mb-4" Style="color: #94a3b8; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                                    @user.bio
+                                </MudText>
+                            }
+                            
+                            @if (!string.IsNullOrEmpty(user.tech_stack))
+                            {
+                                <div class="d-flex flex-wrap gap-1 mt-2">
+                                    @foreach (var tech in user.tech_stack.Split(',', StringSplitOptions.RemoveEmptyEntries).Take(4))
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info" Style="font-size: 0.65rem;">@tech.Trim()</MudChip>
+                                    }
+                                    @if(user.tech_stack.Split(',', StringSplitOptions.RemoveEmptyEntries).Length > 4)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Default" Style="font-size: 0.65rem;">+@(user.tech_stack.Split(',').Length - 4)</MudChip>
+                                    }
+                                </div>
+                            }
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private bool isLoading = true;
+    private List<UserResponse> allUsers = new();
+    private List<UserResponse> filteredUsers = new();
+    private string searchQuery = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        isLoading = true;
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<UserResponse>>("users");
+            if (result != null)
+            {
+                allUsers = result;
+                filteredUsers = result;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando usuarios: {ex.Message}");
+            Snackbar.Add("No se pudo cargar el directorio de desarrolladores.", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void FilterUsers()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filteredUsers = allUsers;
+        }
+        else
+        {
+            var lowerQuery = searchQuery.ToLower();
+            filteredUsers = allUsers.Where(u => 
+                u.username.ToLower().Contains(lowerQuery) ||
+                (u.tech_stack != null && u.tech_stack.ToLower().Contains(lowerQuery)) ||
+                (u.experience_level != null && u.experience_level.ToLower().Contains(lowerQuery)) ||
+                (u.bio != null && u.bio.ToLower().Contains(lowerQuery))
+            ).ToList();
+        }
+    }
+
+    public class UserResponse
+    {
+        public int id { get; set; }
+        public string username { get; set; } = string.Empty;
+        public string? bio { get; set; }
+        public string? github_username { get; set; }
+        public string? experience_level { get; set; }
+        public string? tech_stack { get; set; }
+        public int karma { get; set; }
+    }
+}

@@ -50,33 +50,85 @@
                 </CardHeaderContent>
             </MudCardHeader>
 
-            <MudCardContent Class="mt-4">
-                <MudText Typo="Typo.h6" Class="mb-3"><b>Acerca de este proyecto</b></MudText>
-                
-                <MudPaper Elevation="0" Class="pa-4 mb-6" Style="background-color: var(--mud-palette-background-grey);">
-                    <MudText Typo="Typo.body1" Style="white-space: pre-wrap; font-size: 1.1rem; line-height: 1.6;">@project.description</MudText>
-                </MudPaper>
+            <MudCardContent Class="mt-0 pa-0">
+                <MudTabs Elevation="0" Rounded="false" Class="mt-2">
+                    <MudTabPanel Text="Detalles del Proyecto" Icon="@Icons.Material.Filled.Info">
+                        <MudText Typo="Typo.h6" Class="mb-3"><b>Acerca de este proyecto</b></MudText>
+                        
+                        <MudPaper Elevation="0" Class="pa-4 mb-6" Style="background-color: var(--mud-palette-background-grey);">
+                            <MudText Typo="Typo.body1" Style="white-space: pre-wrap; font-size: 1.1rem; line-height: 1.6;">@project.description</MudText>
+                        </MudPaper>
 
-                @if (!string.IsNullOrEmpty(project.roles_sought))
-                {
-                    <MudText Typo="Typo.h6" Class="mb-3"><b>Roles que buscamos completar:</b></MudText>
-                    <div class="d-flex flex-wrap gap-2 mb-8">
-                        @foreach (var role in project.roles_sought.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                        @if (!string.IsNullOrEmpty(project.roles_sought))
                         {
-                            <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined" Size="Size.Large">@role.Trim()</MudChip>
+                            <MudText Typo="Typo.h6" Class="mb-3"><b>Roles que buscamos completar:</b></MudText>
+                            <div class="d-flex flex-wrap gap-2 mb-8">
+                                @foreach (var role in project.roles_sought.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined" Size="Size.Large">@role.Trim()</MudChip>
+                                }
+                            </div>
                         }
-                    </div>
-                }
+
+                        <div class="d-flex justify-end pt-4 pb-2">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" 
+                                       StartIcon="@Icons.Material.Filled.Mail" 
+                                       Disabled="!project.is_open"
+                                       OnClick="ContactCreator">
+                                Contactar al Creador
+                            </MudButton>
+                        </div>
+                    </MudTabPanel>
+
+                    <MudTabPanel Text="Devlogs (Avances)" Icon="@Icons.Material.Filled.PhotoCamera">
+                        @if (isOwner && project.is_open)
+                        {
+                            <div class="mb-6 d-flex flex-column align-start">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight: 600;">Sube una foto de tu avance (JPG/PNG)</MudText>
+                                <div class="d-flex align-center gap-4">
+                                    <InputFile id="fileInput" OnChange="UploadImage" hidden accept=".jpg,.jpeg,.png" />
+                                    <MudButton HtmlTag="label"
+                                               Variant="Variant.Filled"
+                                               Color="Color.Secondary"
+                                               StartIcon="@Icons.Material.Filled.CloudUpload"
+                                               for="fileInput"
+                                               Disabled="isUploading">
+                                        @(isUploading ? "Subiendo..." : "Subir Avance")
+                                    </MudButton>
+                                </div>
+                            </div>
+                            <MudDivider Class="mb-6"/>
+                        }
+
+                        @if (project.devlogs != null && project.devlogs.Any())
+                        {
+                            <MudGrid>
+                                @foreach (var devlog in project.devlogs.OrderByDescending(d => d.created_at))
+                                {
+                                    <MudItem xs="12" sm="6" md="4">
+                                        <MudCard Elevation="3" Class="neon-card">
+                                            <MudCardMedia Image="@devlog.image_url" Height="200" />
+                                            <MudCardContent>
+                                                <div class="d-flex justify-space-between align-center">
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@devlog.created_at.ToString("dd MMM yyyy HH:mm")</MudText>
+                                                    <MudBadge Content="@(devlog.reactions != null ? devlog.reactions.Count : 0)" Color="Color.Error" Overlap="true" Class="mx-2">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.LocalFireDepartment" Color="Color.Warning" Size="Size.Small" OnClick="@(() => AddReaction(devlog.id))" />
+                                                    </MudBadge>
+                                                </div>
+                                            </MudCardContent>
+                                        </MudCard>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">Aún no hay avances compartidos en este proyecto.</MudAlert>
+                        }
+                    </MudTabPanel>
+                </MudTabs>
             </MudCardContent>
 
-            <MudCardActions Class="d-flex justify-end pt-4 pb-2 pr-4">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" 
-                           StartIcon="@Icons.Material.Filled.Mail" 
-                           Disabled="!project.is_open"
-                           OnClick="ContactCreator">
-                    Contactar al Creador
-                </MudButton>
-            </MudCardActions>
         </MudCard>
     }
 </MudContainer>
@@ -88,6 +140,8 @@
     private ProjectDetailResponse? project;
     private bool isLoading = true;
     private bool isOwner = false; // Simulación de dueño
+    private bool isUploading = false;
+    private string? currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -108,9 +162,66 @@
             if (project != null)
             {
                 var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-                var currentUserId = authState.User.FindFirst("user_id")?.Value;
+                currentUserId = authState.User.FindFirst("user_id")?.Value;
                 isOwner = currentUserId != null && currentUserId == project.owner_id.ToString();
             }
+        }
+    }
+
+    private async Task UploadImage(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        var ext = Path.GetExtension(file.Name).ToLower();
+        if (ext != ".jpg" && ext != ".jpeg" && ext != ".png")
+        {
+            Snackbar.Add("Solo se permiten archivos JPG y PNG.", Severity.Warning);
+            return;
+        }
+
+        if (file.Size > 5 * 1024 * 1024)
+        {
+            Snackbar.Add("El archivo no debe pesar más de 5MB.", Severity.Warning);
+            return;
+        }
+
+        isUploading = true;
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            using var fileStream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var streamContent = new StreamContent(fileStream);
+            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+            
+            content.Add(streamContent, "file", file.Name);
+
+            var response = await Http.PostAsync($"projects/{Id}/devlogs?user_id={currentUserId}", content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var newDevlog = await response.Content.ReadFromJsonAsync<DevlogResponse>();
+                if (newDevlog != null)
+                {
+                    project?.devlogs.Add(newDevlog);
+                    Snackbar.Add("Avance subido con éxito", Severity.Success);
+                }
+            }
+            else
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Error al subir imagen: {errorText}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Upload error: {ex.Message}");
+            Snackbar.Add("Error inesperado al subir la imagen", Severity.Error);
+        }
+        finally
+        {
+            isUploading = false;
+            StateHasChanged();
         }
     }
 
@@ -123,6 +234,31 @@
     {
         // Por ahora simulamos la acción como solicitó el usuario.
         Snackbar.Add("¡Mensaje enviado al creador exitosamente! Pronto te contactarán.", Severity.Success);
+    }
+
+    private async Task AddReaction(int devlogId)
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst("user_id")?.Value ?? "1";
+            
+            var response = await Http.PostAsync($"projects/devlogs/{devlogId}/react?user_id={userId}&emoji=🔥", null);
+            if (response.IsSuccessStatusCode)
+            {
+                // Refrescamos el proyecto
+                project = await Http.GetFromJsonAsync<ProjectDetailResponse>($"projects/{Id}");
+            }
+            else
+            {
+                Snackbar.Add("No pudimos registrar tu reacción.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error reaccionando: {ex.Message}");
+            Snackbar.Add("Error al conectar con la API de reacciones.", Severity.Error);
+        }
     }
 
     private void GoBack()
@@ -141,5 +277,22 @@
         public string? roles_sought { get; set; }
         public bool is_open { get; set; }
         public DateTime created_at { get; set; }
+        public List<DevlogResponse> devlogs { get; set; } = new();
+    }
+
+    public class DevlogResponse
+    {
+        public int id { get; set; }
+        public int project_id { get; set; }
+        public string image_url { get; set; } = string.Empty;
+        public DateTime created_at { get; set; }
+        public List<ReactionResponse> reactions { get; set; } = new();
+    }
+
+    public class ReactionResponse
+    {
+        public int id { get; set; }
+        public int devlog_id { get; set; }
+        public string emoji { get; set; } = string.Empty;
     }
 }

@@ -7,6 +7,7 @@ from datetime import datetime
 # ==========================================
 class ReplyBase(BaseModel):
     content: str = Field(..., description="Contenido o bloque de código propuesto")
+    code_snippet: Optional[str] = None
 
 class ReplyCreate(ReplyBase):
     pass
@@ -16,6 +17,7 @@ class ReplyResponse(ReplyBase):
     thread_id: int
     author_id: int
     author_username: str
+    author_karma: int
     is_solution: bool
     created_at: datetime
 
@@ -54,6 +56,7 @@ class ThreadResponse(ThreadBase):
     id: int
     author_id: int
     author_username: str
+    author_karma: int
     created_at: datetime
     snippets: List[ThreadSnippetResponse] = []
     replies: List[ReplyResponse] = []
@@ -73,11 +76,37 @@ class ProjectBase(BaseModel):
 class ProjectCreate(ProjectBase):
     pass
 
+class ReactionBase(BaseModel):
+    emoji: str
+
+class ReactionCreate(ReactionBase):
+    pass
+
+class ReactionResponse(ReactionBase):
+    id: int
+    devlog_id: int
+    user_id: int
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class DevlogBase(BaseModel):
+    image_url: str
+
+class DevlogResponse(DevlogBase):
+    id: int
+    project_id: int
+    created_at: datetime
+    reactions: List[ReactionResponse] = []
+    
+    model_config = ConfigDict(from_attributes=True)
+
 class ProjectResponse(ProjectBase):
     id: int
     owner_id: int
     owner_username: str
     created_at: datetime
+    devlogs: List[DevlogResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -91,6 +120,7 @@ class UserBase(BaseModel):
     bio: Optional[str] = None
     github_username: Optional[str] = None
     experience_level: Optional[str] = None
+    tech_stack: Optional[str] = None
 
 class UserCreate(UserBase):
     # La contraseña solo viaja a la API en la creación/login, nunca de vuelta.
@@ -99,6 +129,7 @@ class UserCreate(UserBase):
 class UserResponse(UserBase):
     id: int
     created_at: datetime
+    karma: int
     # Se hereda todo menos 'password', cumpliendo el requisito estricto
     
     model_config = ConfigDict(from_attributes=True)

@@ -66,7 +66,37 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.get("/debug/users")
+@router.get("/users", response_model=list[schemas.UserResponse])
 def get_all_users(db: Session = Depends(database.get_db)):
-    users = db.query(models.User).all()
-    return [{"id": u.id, "username": u.username, "email": u.email} for u in users]
+    """
+    Directorio de Desarrolladores: Devuelve todos los usuarios públicos para el radar.
+    """
+    return db.query(models.User).all()
+
+@router.get("/users/{user_id}", response_model=schemas.UserResponse)
+def get_user_profile(user_id: int, db: Session = Depends(database.get_db)):
+    """
+    Obtiene el perfil completo de un desarrollador.
+    """
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return db_user
+
+@router.put("/users/{user_id}", response_model=schemas.UserResponse)
+def update_user_profile(user_id: int, user_update: schemas.UserBase, db: Session = Depends(database.get_db)):
+    """
+    Actualiza el perfil de un usuario, incluyendo su tech_stack.
+    """
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+    db_user.bio = user_update.bio
+    db_user.github_username = user_update.github_username
+    db_user.experience_level = user_update.experience_level
+    db_user.tech_stack = user_update.tech_stack
+    
+    db.commit()
+    db.refresh(db_user)
+    return db_user

@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject HttpClient Http
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-10">
     <MudCard Elevation="0" Class="neon-card pa-6">
@@ -21,49 +22,99 @@
             {
                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mt-4" />
             }
-            else
+            else if (isEditing)
             {
-                <div class="d-flex justify-center gap-2 mt-4 mb-8">
-                    <div class="tech-pill">
-                        <MudIcon Icon="@Icons.Material.Rounded.Star" Size="Size.Small" Class="mr-1" />
-                        Junior / Mid
+                <EditForm Model="editModel" OnValidSubmit="SaveProfile">
+                    <MudTextField @bind-Value="editModel.bio" Label="Biografía (Breve)" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+                    <MudTextField @bind-Value="editModel.github_username" Label="Usuario de GitHub (sin arroba)" Variant="Variant.Outlined" Class="mb-3" />
+                    <MudSelect @bind-Value="editModel.experience_level" Label="Nivel de Experiencia" Variant="Variant.Outlined" Class="mb-4">
+                        <MudSelectItem Value="@("Junior")">Junior</MudSelectItem>
+                        <MudSelectItem Value="@("Mid")">Mid-Level</MudSelectItem>
+                        <MudSelectItem Value="@("Senior")">Senior</MudSelectItem>
+                        <MudSelectItem Value="@("Lead")">Tech Lead</MudSelectItem>
+                    </MudSelect>
+
+                    <div class="d-flex align-center gap-2 mb-2">
+                        <MudTextField @bind-Value="newTech" Label="Agregar Tecnología (Ej: React, Python)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Secondary" Variant="Variant.Filled" OnClick="AddTech" />
                     </div>
+                    <div class="d-flex flex-wrap gap-2 mb-6">
+                        @foreach (var tech in currentTechStack)
+                        {
+                            <MudChip T="string" Color="Color.Info" OnClose="() => RemoveTech(tech)">@tech</MudChip>
+                        }
+                    </div>
+
+                    <div class="d-flex justify-center gap-4 pt-4">
+                        <MudButton Variant="Variant.Text" OnClick="CancelEdit">Cancelar</MudButton>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="isSaving">
+                            @(isSaving ? "Guardando..." : "Guardar Cambios")
+                        </MudButton>
+                    </div>
+                </EditForm>
+            }
+            else if (userProfile != null)
+            {
+                <div class="d-flex justify-center gap-2 mt-4 mb-4">
+                    @if (!string.IsNullOrEmpty(userProfile.experience_level))
+                    {
+                        <div class="tech-pill">
+                            <MudIcon Icon="@Icons.Material.Rounded.Star" Size="Size.Small" Class="mr-1" />
+                            @userProfile.experience_level
+                        </div>
+                    }
                     <div class="tech-pill" style="border-color: rgba(16, 185, 129, 0.2); color: #34d399;">
                         <MudIcon Icon="@Icons.Material.Rounded.Verified" Size="Size.Small" Class="mr-1" />
                         Verificado
                     </div>
                 </div>
 
+                @if (currentTechStack.Any())
+                {
+                    <div class="d-flex justify-center flex-wrap gap-2 mb-6">
+                        @foreach (var tech in currentTechStack)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Dark" Variant="Variant.Text">@tech</MudChip>
+                        }
+                    </div>
+                }
+
                 <MudDivider Style="@($"background-color: {(IsDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)")};")" />
 
                 <div class="d-flex flex-column align-start mx-auto mt-8" style="max-width: 320px;">
                     <MudText Typo="Typo.subtitle2" Style="@($"color: {(IsDarkMode ? "#64748b" : "#475569")}; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;")">Biografía</MudText>
                     <MudText Typo="Typo.body2" Class="mt-2 mb-6 text-left" Style="@($"color: {(IsDarkMode ? "#94a3b8" : "#334155")}; line-height: 1.6;")">
-                        Desarrollador enfocado en @(username.ToLower().Contains("dev") ? "soluciones Fullstack" : "crear experiencias increíbles"). Apasionado por la arquitectura limpia y la colaboración en DevNest.
+                        @(string.IsNullOrEmpty(userProfile.bio) ? "Sin biografía..." : userProfile.bio)
                     </MudText>
 
-                    <MudText Typo="Typo.subtitle2" Style="@($"color: {(IsDarkMode ? "#64748b" : "#475569")}; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;")">Conexiones</MudText>
-                    <div class="d-flex align-center mt-3 w-100 p-2" style="@($"background: {(IsDarkMode ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.03)")}; border-radius: 8px;")">
-                        <MudIcon Icon="@Icons.Custom.Brands.GitHub" Color="Color.Default" Size="Size.Small" Class="mr-3" />
-                        <MudText Typo="Typo.body2" Style="@($"color: {(IsDarkMode ? "#f8fafc" : "#0f172a")}; font-family: 'JetBrains Mono';")">github.com/@username.ToLower()</MudText>
-                        <MudSpacer />
-                        <MudIcon Icon="@Icons.Material.Rounded.OpenInNew" Size="Size.Small" Style="color: #475569;" />
-                    </div>
+                    @if (!string.IsNullOrEmpty(userProfile.github_username))
+                    {
+                        <MudText Typo="Typo.subtitle2" Style="@($"color: {(IsDarkMode ? "#64748b" : "#475569")}; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;")">Conexiones</MudText>
+                        <div class="d-flex align-center mt-3 w-100 p-2" style="@($"background: {(IsDarkMode ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.03)")}; border-radius: 8px;")">
+                            <MudIcon Icon="@Icons.Custom.Brands.GitHub" Color="Color.Default" Size="Size.Small" Class="mr-3" />
+                            <MudText Typo="Typo.body2" Style="@($"color: {(IsDarkMode ? "#f8fafc" : "#0f172a")}; font-family: 'JetBrains Mono';")">github.com/@userProfile.github_username</MudText>
+                            <MudSpacer />
+                            <MudIconButton Icon="@Icons.Material.Rounded.OpenInNew" Size="Size.Small" Style="color: #475569;" Href="@($"https://github.com/{userProfile.github_username}")" Target="_blank" />
+                        </div>
+                    }
                 </div>
             }
         </MudCardContent>
 
-        <MudCardActions Class="d-flex justify-center pb-8 mt-4">
-            <MudButton Variant="Variant.Filled" 
-                       Color="Color.Primary" 
-                       Size="Size.Large" 
-                       OnClick="ShowComingSoonMsg" 
-                       StartIcon="@Icons.Material.Rounded.EditNote"
-                       Class="mud-button-filled px-8"
-                       Style="border-radius: 12px; font-weight: 700; text-transform: none;">
-                Configurar Perfil
-            </MudButton>
-        </MudCardActions>
+        @if (!isLoading && !isEditing)
+        {
+            <MudCardActions Class="d-flex justify-center pb-8 mt-4">
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           Size="Size.Large" 
+                           OnClick="EnableEditMode" 
+                           StartIcon="@Icons.Material.Rounded.EditNote"
+                           Class="mud-button-filled px-8"
+                           Style="border-radius: 12px; font-weight: 700; text-transform: none;">
+                    Configurar Perfil
+                </MudButton>
+            </MudCardActions>
+        }
     </MudCard>
 </MudContainer>
 
@@ -98,10 +149,23 @@
     public bool IsDarkMode { get; set; }
 
     private bool isLoading = true;
+    private bool isEditing = false;
+    private bool isSaving = false;
     private string username = "Usuario";
     private string email = "cargando@devnest.com";
+    private string? currentUserId;
+
+    private UserResponse? userProfile;
+    private UserUpdateRequest editModel = new();
+    private string newTech = "";
+    private List<string> currentTechStack = new();
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadProfile();
+    }
+
+    private async Task LoadProfile()
     {
         isLoading = true;
         
@@ -115,12 +179,22 @@
                 username = user.Identity.Name ?? user.FindFirst(c => c.Type == "sub")?.Value ?? "Desconocido";
                 email = user.FindFirst(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value 
                         ?? $"{username.ToLower()}@devnest.local";
+                currentUserId = user.FindFirst("user_id")?.Value;
+
+                if (!string.IsNullOrEmpty(currentUserId))
+                {
+                    userProfile = await Http.GetFromJsonAsync<UserResponse>($"users/{currentUserId}");
+                    if (userProfile != null && !string.IsNullOrEmpty(userProfile.tech_stack))
+                    {
+                        currentTechStack = userProfile.tech_stack.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToList();
+                    }
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error leyendo token JWT: {ex.Message}");
-            Snackbar.Add("Error al cargar los datos del perfil.", Severity.Error);
+            Console.WriteLine($"Error obteniendo perfil: {ex.Message}");
+            Snackbar.Add("Error al cargar los datos del servidor.", Severity.Error);
         }
         finally
         {
@@ -128,8 +202,91 @@
         }
     }
 
-    private void ShowComingSoonMsg()
+    private void EnableEditMode()
     {
-        Snackbar.Add("¡Edición de perfil próximamente disponible!", Severity.Info);
+        if (userProfile == null) return;
+        editModel = new UserUpdateRequest
+        {
+            username = userProfile.username,
+            email = userProfile.email,
+            bio = userProfile.bio,
+            github_username = userProfile.github_username,
+            experience_level = userProfile.experience_level,
+            tech_stack = userProfile.tech_stack
+        };
+        isEditing = true;
+    }
+
+    private void CancelEdit()
+    {
+        isEditing = false;
+        newTech = "";
+    }
+
+    private void AddTech()
+    {
+        if (!string.IsNullOrWhiteSpace(newTech) && !currentTechStack.Contains(newTech.Trim()))
+        {
+            currentTechStack.Add(newTech.Trim());
+            newTech = "";
+        }
+    }
+
+    private void RemoveTech(string tech)
+    {
+        if (currentTechStack.Contains(tech))
+        {
+            currentTechStack.Remove(tech);
+        }
+    }
+
+    private async Task SaveProfile()
+    {
+        isSaving = true;
+        try
+        {
+            editModel.tech_stack = currentTechStack.Any() ? string.Join(", ", currentTechStack) : null;
+            
+            var response = await Http.PutAsJsonAsync($"users/{currentUserId}", editModel);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Perfil actualizado exitosamente", Severity.Success);
+                isEditing = false;
+                await LoadProfile();
+            }
+            else
+            {
+                Snackbar.Add("Error guardando el perfil.", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Problema de conexión al guardar.", Severity.Error);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    public class UserResponse
+    {
+        public int id { get; set; }
+        public string username { get; set; } = string.Empty;
+        public string email { get; set; } = string.Empty;
+        public string? bio { get; set; }
+        public string? github_username { get; set; }
+        public string? experience_level { get; set; }
+        public string? tech_stack { get; set; }
+    }
+
+    public class UserUpdateRequest
+    {
+        public string username { get; set; } = string.Empty;
+        public string email { get; set; } = string.Empty;
+        public string? bio { get; set; }
+        public string? github_username { get; set; }
+        public string? experience_level { get; set; }
+        public string? tech_stack { get; set; }
     }
 }

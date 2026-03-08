@@ -13,6 +13,8 @@ class User(Base):
     bio = Column(Text, nullable=True)
     github_username = Column(String(100), nullable=True)
     experience_level = Column(String(50), nullable=True)  # Ej. "Junior", "Mid", "Senior"
+    tech_stack = Column(Text, nullable=True)  # Ej. "C#, Blazor, Python"
+    karma = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relaciones One-to-Many
@@ -33,6 +35,7 @@ class Project(Base):
     
     # Relación inversa
     owner = relationship("User", back_populates="projects")
+    devlogs = relationship("Devlog", back_populates="project", cascade="all, delete-orphan")
 
     @property
     def owner_username(self) -> str:
@@ -56,6 +59,10 @@ class Thread(Base):
     def author_username(self) -> str:
         return self.author.username if self.author else "Desconocido"
 
+    @property
+    def author_karma(self) -> int:
+        return self.author.karma if self.author else 0
+
 class ThreadSnippet(Base):
     __tablename__ = "thread_snippets"
     
@@ -75,6 +82,7 @@ class Reply(Base):
     thread_id = Column(Integer, ForeignKey("threads.id"), nullable=False)
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(Text, nullable=False)
+    code_snippet = Column(Text, nullable=True)
     is_solution = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
@@ -85,3 +93,30 @@ class Reply(Base):
     @property
     def author_username(self) -> str:
         return self.author.username if self.author else "Desconocido"
+
+    @property
+    def author_karma(self) -> int:
+        return self.author.karma if self.author else 0
+
+class Devlog(Base):
+    __tablename__ = "devlogs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    image_url = Column(String(500), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    project = relationship("Project", back_populates="devlogs")
+    reactions = relationship("Reaction", back_populates="devlog", cascade="all, delete-orphan")
+
+class Reaction(Base):
+    __tablename__ = "reactions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    devlog_id = Column(Integer, ForeignKey("devlogs.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    emoji = Column(String(10), default="🔥", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    devlog = relationship("Devlog", back_populates="reactions")
+    user = relationship("User")

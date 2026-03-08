@@ -29,9 +29,13 @@
                 <CardHeaderContent>
                     <MudText Typo="Typo.h4" Color="Color.Secondary"><b>@thread.title</b></MudText>
                     <div class="d-flex align-center mt-2">
-                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mr-3">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mr-3 d-flex align-center">
                             <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
                             @thread.author_username
+                            @if (thread.author_karma > 0)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="@(thread.author_karma >= 100 ? Color.Warning : Color.Surface)" Icon="@Icons.Material.Filled.LocalFireDepartment" Variant="Variant.Text" Style="font-size: 0.70rem; padding: 0 4px; height: 20px; margin-left: 4px;">@thread.author_karma</MudChip>
+                            }
                         </MudText>
                         <MudText Typo="Typo.caption">@thread.created_at.ToString("dd MMM yyyy HH:mm")</MudText>
                         <MudSpacer />
@@ -82,8 +86,13 @@
                 {
                     <MudPaper Elevation="2" Class="pa-4" Style="@(reply.is_solution ? "border-left: 4px solid var(--mud-palette-success);" : "")">
                         <div class="d-flex justify-space-between align-center mb-2">
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">
-                                <b>@reply.author_username</b> - @reply.created_at.ToString("dd MMM yyyy HH:mm")
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="d-flex align-center">
+                                <b>@reply.author_username</b> 
+                                @if (reply.author_karma > 0)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="@(reply.author_karma >= 100 ? Color.Warning : Color.Surface)" Icon="@Icons.Material.Filled.LocalFireDepartment" Variant="Variant.Text" Style="font-size: 0.70rem; padding: 0 4px; height: 20px; margin-left: 4px; margin-right: 4px;">@reply.author_karma</MudChip>
+                                }
+                                - @reply.created_at.ToString("dd MMM yyyy HH:mm")
                             </MudText>
                             <div>
                                 @if (reply.is_solution)
@@ -98,7 +107,17 @@
                                 }
                             </div>
                         </div>
-                        <MudText Typo="Typo.body1" Style="white-space: pre-wrap;">@reply.content</MudText>
+                        <MudText Typo="Typo.body1" Style="white-space: pre-wrap;" Class="@(string.IsNullOrEmpty(reply.code_snippet) ? "" : "mb-3")">@reply.content</MudText>
+                        
+                        @if (!string.IsNullOrEmpty(reply.code_snippet))
+                        {
+                            <div style="height: 250px; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; overflow: hidden; position: relative;">
+                                <StandaloneCodeEditor @ref="replyEditors[reply.id]" 
+                                                      Id="@($"reply-editor-{reply.id}")" 
+                                                      ConstructionOptions="@((e) => ReplyEditorOptions(e, reply.code_snippet))" 
+                                                      CssClass="monaco-editor-container" />
+                            </div>
+                        }
                     </MudPaper>
                 }
             </div>
@@ -119,13 +138,27 @@
                 <EditForm Model="replyModel" OnValidSubmit="SubmitReply">
                     <DataAnnotationsValidator />
                     <MudTextField @bind-Value="replyModel.content" 
-                                  Label="Escribe tu código, sugerencia o feedback aquí..." 
+                                  Label="Escribe tu sugerencia o feedback aquí..." 
                                   Variant="Variant.Outlined" 
-                                  Lines="5"
+                                  Lines="3"
                                   For="@(() => replyModel.content)"
                                   Required="true"
                                   Class="mb-4" />
                                   
+                    <div class="d-flex align-center mb-4">
+                        <MudSwitch @bind-Value="includeCode" Color="Color.Secondary" Label="Adjuntar Código (Nivel Dios)" />
+                    </div>
+
+                    @if (includeCode)
+                    {
+                        <div class="mb-4" style="height: 250px; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; overflow: hidden;">
+                            <StandaloneCodeEditor @ref="replyInputEditor" 
+                                                  Id="reply-input-editor" 
+                                                  ConstructionOptions="ReplyInputEditorOptions" 
+                                                  CssClass="monaco-editor-container" />
+                        </div>
+                    }
+
                     <div class="d-flex justify-end">
                         <MudButton ButtonType="ButtonType.Submit" 
                                    Variant="Variant.Filled" 
@@ -161,6 +194,10 @@
 
     // Monaco Editors for snippets
     private Dictionary<int, StandaloneCodeEditor> detailEditors = new();
+    private Dictionary<int, StandaloneCodeEditor> replyEditors = new();
+    
+    private bool includeCode = false;
+    private StandaloneCodeEditor? replyInputEditor;
 
     protected override async Task OnInitializedAsync()
     {
@@ -199,13 +236,50 @@
         };
     }
 
+    private StandaloneEditorConstructionOptions ReplyEditorOptions(StandaloneCodeEditor editor, string code)
+    {
+        return new StandaloneEditorConstructionOptions
+        {
+            Language = "javascript", // Snippets language
+            Theme = "vs-dark",
+            Value = code,
+            ReadOnly = true,
+            AutomaticLayout = true,
+            Minimap = new EditorMinimapOptions { Enabled = false },
+            ScrollBeyondLastLine = false
+        };
+    }
+
+    private StandaloneEditorConstructionOptions ReplyInputEditorOptions(StandaloneCodeEditor editor)
+    {
+        return new StandaloneEditorConstructionOptions
+        {
+            Language = "javascript",
+            Theme = "vs-dark",
+            Value = "",
+            AutomaticLayout = true,
+            Minimap = new EditorMinimapOptions { Enabled = false },
+            ScrollBeyondLastLine = false
+        };
+    }
+
     private async Task SubmitReply()
     {
         isReplying = true;
         try
         {
+            if (includeCode && replyInputEditor != null)
+            {
+                replyModel.code_snippet = await replyInputEditor.GetValue();
+            }
+            else
+            {
+                replyModel.code_snippet = null;
+            }
+
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             var userId = authState.User.FindFirst("user_id")?.Value ?? "1"; // Fallback a 1 si no hay
+
             
             var response = await Http.PostAsJsonAsync($"threads/{Id}/replies?user_id={userId}", replyModel);
             
@@ -213,6 +287,7 @@
             {
                 Snackbar.Add("¡Respuesta publicada!", Severity.Success);
                 replyModel = new ReplyCreateRequest(); // Limpiar formulario
+                includeCode = false;
                 await LoadThreadData(); // Recargar el hilo y respuestas sin cambiar de página
             }
             else
@@ -264,6 +339,7 @@
         public int id { get; set; }
         public int author_id { get; set; }
         public string author_username { get; set; } = string.Empty;
+        public int author_karma { get; set; }
         public string title { get; set; } = string.Empty;
         public string content { get; set; } = string.Empty;
         public List<ThreadSnippetResponse> snippets { get; set; } = new();
@@ -286,7 +362,9 @@
         public int thread_id { get; set; }
         public int author_id { get; set; }
         public string author_username { get; set; } = string.Empty;
+        public int author_karma { get; set; }
         public string content { get; set; } = string.Empty;
+        public string? code_snippet { get; set; }
         public bool is_solution { get; set; }
         public DateTime created_at { get; set; }
     }
@@ -295,5 +373,6 @@
     {
         [Required(ErrorMessage = "La respuesta no puede estar vacía.")]
         public string content { get; set; } = string.Empty;
+        public string? code_snippet { get; set; }
     }
 }

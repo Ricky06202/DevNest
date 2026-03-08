@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+import os
 import traceback
 import models
 from database import engine
@@ -15,6 +17,10 @@ app = FastAPI(title="Dev Network API", description="API REST para red social de 
 app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(threads.router)
+
+# Configurar carpeta estática para subida de imágenes (asegurar que exista)
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # --- REGLA ESTRICTA DE CPANEL: CORS y Manejador 500 ---
 origins = [
