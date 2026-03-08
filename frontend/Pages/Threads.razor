@@ -18,18 +18,34 @@
     </MudButton>
 </div>
 
-@if (threads == null)
+<!-- Barra de Búsqueda -->
+<div class="mb-8 p-4" style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;">
+    <MudTextField @bind-Value="searchQuery" 
+                  Placeholder="Buscar por título, contenido o autor..." 
+                  Adornment="Adornment.Start" 
+                  AdornmentIcon="@Icons.Material.Filled.Search" 
+                  Variant="Variant.Outlined" 
+                  Immediate="true"
+                  OnKeyUp="FilterThreads"
+                  Clearable="true" />
+</div>
+
+@if (allThreads == null)
 {
     <MudProgressCircular Color="Color.Secondary" Indeterminate="true" Class="mt-5" />
 }
-else if (!threads.Any())
+else if (!allThreads.Any())
 {
     <MudAlert Severity="Severity.Info" Class="mt-5">El gran muro del código está vacío. ¡Publica la primera charla técnica!</MudAlert>
+}
+else if (!filteredThreads.Any())
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-5">No se encontraron hilos para tu búsqueda.</MudAlert>
 }
 else
 {
     <MudGrid Spacing="4">
-        @foreach (var thread in threads)
+        @foreach (var thread in filteredThreads)
         {
             <MudItem xs="12" sm="6" md="4">
                 <MudCard Elevation="0" Class="neon-card h-100 d-flex flex-column" Style="border-top: 4px solid #8b5cf6 !important;">
@@ -84,18 +100,41 @@ else
     [CascadingParameter(Name = "IsDarkMode")]
     public bool IsDarkMode { get; set; }
 
-    private List<ThreadResponse>? threads;
+    private List<ThreadResponse>? allThreads;
+    private List<ThreadResponse> filteredThreads = new();
+    private string searchQuery = "";
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            threads = await Http.GetFromJsonAsync<List<ThreadResponse>>("threads/");
+            allThreads = await Http.GetFromJsonAsync<List<ThreadResponse>>("threads/");
+            if (allThreads != null)
+            {
+                filteredThreads = allThreads;
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error cargando hilos: {ex.Message}");
-            threads = new List<ThreadResponse>();
+            allThreads = new List<ThreadResponse>();
+        }
+    }
+
+    private void FilterThreads()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery) || allThreads == null)
+        {
+            filteredThreads = allThreads ?? new();
+        }
+        else
+        {
+            var lowerQuery = searchQuery.ToLower();
+            filteredThreads = allThreads.Where(t => 
+                t.title.ToLower().Contains(lowerQuery) ||
+                (t.content != null && t.content.ToLower().Contains(lowerQuery)) ||
+                t.author_username.ToLower().Contains(lowerQuery)
+            ).ToList();
         }
     }
 

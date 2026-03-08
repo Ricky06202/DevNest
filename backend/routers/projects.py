@@ -19,9 +19,9 @@ router = APIRouter(
 @router.get("/", response_model=List[schemas.ProjectResponse])
 def get_projects(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
     """
-    Obtiene todos los proyectos del Radar (Matchmaking) paginados.
+    Obtiene todos los proyectos del Radar (Matchmaking) paginados, más recientes primero.
     """
-    projects = db.query(models.Project).offset(skip).limit(limit).all()
+    projects = db.query(models.Project).order_by(models.Project.created_at.desc()).offset(skip).limit(limit).all()
     return projects
 
 @router.post("/", response_model=schemas.ProjectResponse, status_code=status.HTTP_201_CREATED)

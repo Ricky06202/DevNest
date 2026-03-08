@@ -14,9 +14,9 @@ router = APIRouter(
 @router.get("/", response_model=List[schemas.ThreadResponse])
 def get_threads(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
     """
-    Obtiene todos los hilos de código paginados.
+    Obtiene todos los hilos de código paginados, más recientes primero.
     """
-    return db.query(models.Thread).offset(skip).limit(limit).all()
+    return db.query(models.Thread).order_by(models.Thread.created_at.desc()).offset(skip).limit(limit).all()
 
 @router.get("/{thread_id}", response_model=schemas.ThreadResponse)
 def get_thread(thread_id: int, db: Session = Depends(database.get_db)):

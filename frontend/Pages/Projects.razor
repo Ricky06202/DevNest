@@ -10,7 +10,7 @@
         </div>
         <div>
             <MudText Typo="Typo.h4" Style="@($"font-weight: 800; color: {(IsDarkMode ? "#f8fafc" : "#0f172a")};")">Radar de Proyectos</MudText>
-            <MudText Typo="Typo.caption" Style="@($"color: {(IsDarkMode ? "#64748b" : "#475569")}; font-family: 'JetBrains Mono';")">@projects?.Count() sistemas detectados en la red</MudText>
+            <MudText Typo="Typo.caption" Style="@($"color: {(IsDarkMode ? "#64748b" : "#475569")}; font-family: 'JetBrains Mono';")">@allProjects?.Count() sistemas detectados en la red</MudText>
         </div>
     </div>
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add" OnClick="NavigateToCreate" Class="mud-button-filled">
@@ -18,18 +18,34 @@
     </MudButton>
 </div>
 
-@if (projects == null)
+<!-- Barra de Búsqueda -->
+<div class="mb-8 p-4" style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;">
+    <MudTextField @bind-Value="searchQuery" 
+                  Placeholder="Buscar por título, rol o descripción..." 
+                  Adornment="Adornment.Start" 
+                  AdornmentIcon="@Icons.Material.Filled.Search" 
+                  Variant="Variant.Outlined" 
+                  Immediate="true"
+                  OnKeyUp="FilterProjects"
+                  Clearable="true" />
+</div>
+
+@if (allProjects == null)
 {
     <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mt-5" />
 }
-else if (!projects.Any())
+else if (!allProjects.Any())
 {
     <MudAlert Severity="Severity.Info" Class="mt-5">Aún no hay proyectos en el radar. ¡Sé el primero en buscar equipo!</MudAlert>
+}
+else if (!filteredProjects.Any())
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-5">No se encontraron proyectos para tu búsqueda.</MudAlert>
 }
 else
 {
     <MudGrid Spacing="4">
-        @foreach (var project in projects)
+        @foreach (var project in filteredProjects)
         {
             <MudItem xs="12" sm="6" md="4">
                 <MudCard Elevation="0" Class="neon-card h-100 d-flex flex-column" Style="border-top: 4px solid #3b82f6 !important;">
@@ -86,18 +102,41 @@ else
     [CascadingParameter(Name = "IsDarkMode")]
     public bool IsDarkMode { get; set; }
 
-    private List<ProjectResponse>? projects;
+    private List<ProjectResponse>? allProjects;
+    private List<ProjectResponse> filteredProjects = new();
+    private string searchQuery = "";
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            projects = await Http.GetFromJsonAsync<List<ProjectResponse>>("projects/");
+            allProjects = await Http.GetFromJsonAsync<List<ProjectResponse>>("projects/");
+            if (allProjects != null)
+            {
+                filteredProjects = allProjects;
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error cargando proyectos: {ex.Message}");
-            projects = new List<ProjectResponse>();
+            allProjects = new List<ProjectResponse>();
+        }
+    }
+
+    private void FilterProjects()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery) || allProjects == null)
+        {
+            filteredProjects = allProjects ?? new();
+        }
+        else
+        {
+            var lowerQuery = searchQuery.ToLower();
+            filteredProjects = allProjects.Where(p => 
+                p.title.ToLower().Contains(lowerQuery) ||
+                (p.roles_sought != null && p.roles_sought.ToLower().Contains(lowerQuery)) ||
+                (p.description != null && p.description.ToLower().Contains(lowerQuery))
+            ).ToList();
         }
     }
 
