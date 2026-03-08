@@ -19,7 +19,7 @@
 </div>
 
 <!-- Barra de Búsqueda -->
-<div class="mb-8 p-4" style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;">
+<div class="mb-8 p-4" style="@($"background: {(IsDarkMode ? "rgba(15, 23, 42, 0.5)" : "rgba(255, 255, 255, 0.5)")}; border: 1px solid {(IsDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)")}; border-radius: 12px;")">
     <MudTextField @bind-Value="searchQuery" 
                   Placeholder="Buscar por título, contenido o autor..." 
                   Adornment="Adornment.Start" 

@@ -7,16 +7,24 @@
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
         padding: 10px 16px !important;
     }
+    .dev-nav-link .mud-nav-link-text {
+        color: @(IsDarkMode ? "#94a3b8" : "#475569") !important;
+        transition: color 0.2s ease;
+    }
     .dev-nav-link:hover {
         background-color: @(IsDarkMode ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.05)") !important;
-        color: @(IsDarkMode ? "#f8fafc" : "#0f172a") !important;
         transform: scale(1.02);
+    }
+    .dev-nav-link:hover .mud-nav-link-text {
+        color: @(IsDarkMode ? "#f8fafc" : "#0f172a") !important;
     }
     .dev-nav-link.active {
         background: linear-gradient(90deg, @(IsDarkMode ? "rgba(59, 130, 246, 0.15)" : "rgba(59, 130, 246, 0.1)") 0%, transparent 100%) !important;
+        box-shadow: inset 4px 0 0 #3b82f6 !important;
+    }
+    .dev-nav-link.active .mud-nav-link-text {
         color: #3b82f6 !important;
         font-weight: 700 !important;
-        box-shadow: inset 4px 0 0 #3b82f6 !important;
     }
     
     .mud-nav-link-icon-default {
