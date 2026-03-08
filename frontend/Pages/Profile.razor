@@ -58,7 +58,7 @@
                 <div class="d-flex justify-center gap-2 mt-4 mb-4">
                     @if (!string.IsNullOrEmpty(userProfile.experience_level))
                     {
-                        <div class="tech-pill">
+                        <div class="tech-pill" style="@($"color: {(IsDarkMode ? "#94a3b8" : "#475569")};")">
                             <MudIcon Icon="@Icons.Material.Rounded.Star" Size="Size.Small" Class="mr-1" />
                             @userProfile.experience_level
                         </div>
@@ -74,7 +74,7 @@
                     <div class="d-flex justify-center flex-wrap gap-2 mb-6">
                         @foreach (var tech in currentTechStack)
                         {
-                            <MudChip T="string" Size="Size.Small" Color="Color.Dark" Variant="Variant.Text">@tech</MudChip>
+                            <MudChip T="string" Size="Size.Small" Color="@(IsDarkMode ? Color.Info : Color.Dark)" Variant="Variant.Outlined">@tech</MudChip>
                         }
                     </div>
                 }
@@ -135,12 +135,12 @@
         display: flex;
         align-items: center;
         padding: 4px 12px;
-        background: @(IsDarkMode ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.03)");
-        border: 1px solid @(IsDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)");
+        background: rgba(148, 163, 184, 0.05);
+        border: 1px solid rgba(148, 163, 184, 0.2);
         border-radius: 20px;
         font-size: 0.75rem;
         font-weight: 600;
-        color: @(IsDarkMode ? "#94a3b8" : "#475569");
+        color: inherit;
     }
 </style>
 
