@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List
 import os
@@ -89,36 +89,86 @@ def close_project(project_id: int, db: Session = Depends(database.get_db)):
     return project
 
 @router.post("/{project_id}/devlogs", response_model=schemas.DevlogResponse, status_code=status.HTTP_201_CREATED)
-def upload_devlog(project_id: int, user_id: int, file: UploadFile = File(...), db: Session = Depends(database.get_db)):
+def create_devlog_post(
+    project_id: int, 
+    title: str = Form(...),
+    content: str = Form(...),
+    user_id: int = Form(...),
+    main_image: UploadFile = File(...), 
+    db: Session = Depends(database.get_db)
+):
     """
-    Sube una foto de avance (Devlog) para un proyecto.
+    Sube un nuevo post de avance (Devlog) con título, texto y una imagen principal.
     """
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
         
     if project.owner_id != user_id:
-        raise HTTPException(status_code=403, detail="Solo el creador puede subir devlogs")
+        raise HTTPException(status_code=403, detail="Solo el creador puede publicar devlogs")
         
-    ext = file.filename.split(".")[-1].lower() if file.filename else ""
+    ext = main_image.filename.split(".")[-1].lower() if main_image.filename else ""
     if ext not in ["jpg", "jpeg", "png"]:
-        raise HTTPException(status_code=400, detail="Solo se permiten imágenes JPG y PNG.")
+        raise HTTPException(status_code=400, detail="Solo se permiten imágenes JPG y PNG para la portada.")
         
     timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     unique_id = str(uuid.uuid4())[:8]
-    filename = f"proj_{project_id}_{timestamp}_{unique_id}.{ext}"
+    filename = f"devlog_{project_id}_{timestamp}_{unique_id}.{ext}"
     filepath = os.path.join("uploads", filename)
     
     with open(filepath, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        shutil.copyfileobj(main_image.file, buffer)
         
-    image_url = f"/uploads/{filename}"
+    main_image_url = f"/uploads/{filename}"
     
-    devlog = models.Devlog(project_id=project_id, image_url=image_url)
+    devlog = models.Devlog(
+        project_id=project_id, 
+        title=title,
+        content=content,
+        main_image_url=main_image_url
+    )
     db.add(devlog)
     db.commit()
     db.refresh(devlog)
     return devlog
+
+@router.post("/devlogs/{devlog_id}/images", response_model=schemas.DevlogImageResponse, status_code=status.HTTP_201_CREATED)
+def upload_devlog_extra_image(
+    devlog_id: int, 
+    user_id: int = Form(...),
+    image: UploadFile = File(...), 
+    db: Session = Depends(database.get_db)
+):
+    """
+    Sube una foto adicional a la galería de un Devlog específico.
+    """
+    devlog = db.query(models.Devlog).filter(models.Devlog.id == devlog_id).first()
+    if not devlog:
+        raise HTTPException(status_code=404, detail="Devlog no encontrado")
+        
+    project = db.query(models.Project).filter(models.Project.id == devlog.project_id).first()
+    if not project or project.owner_id != user_id:
+        raise HTTPException(status_code=403, detail="Sin permisos para modificar este devlog")
+
+    ext = image.filename.split(".")[-1].lower() if image.filename else ""
+    if ext not in ["jpg", "jpeg", "png"]:
+        raise HTTPException(status_code=400, detail="Solo imágenes JPG y PNG.")
+
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    unique_id = str(uuid.uuid4())[:8]
+    filename = f"gallery_{devlog_id}_{timestamp}_{unique_id}.{ext}"
+    filepath = os.path.join("uploads", filename)
+    
+    with open(filepath, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+        
+    image_url = f"/uploads/{filename}"
+    
+    devlog_image = models.DevlogImage(devlog_id=devlog_id, image_url=image_url)
+    db.add(devlog_image)
+    db.commit()
+    db.refresh(devlog_image)
+    return devlog_image
 
 @router.post("/devlogs/{devlog_id}/react", response_model=schemas.ReactionResponse, status_code=status.HTTP_201_CREATED)
 def react_to_devlog(devlog_id: int, user_id: int, emoji: str = "🔥", db: Session = Depends(database.get_db)):

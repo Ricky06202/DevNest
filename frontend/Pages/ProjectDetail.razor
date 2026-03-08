@@ -80,23 +80,34 @@
                         </div>
                     </MudTabPanel>
 
-                    <MudTabPanel Text="Devlogs (Avances)" Icon="@Icons.Material.Filled.PhotoCamera">
+                    <MudTabPanel Text="Devlogs (Avances)" Icon="@Icons.Material.Filled.Article">
                         @if (isOwner && project.is_open)
                         {
-                            <div class="mb-6 d-flex flex-column align-start">
-                                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="font-weight: 600;">Sube una foto de tu avance (JPG/PNG)</MudText>
+                            <MudPaper Class="pa-4 mb-6" Elevation="2" Style="border-radius: 12px; background: rgba(0, 0, 0, 0.2);">
+                                <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 800;">Publicar un nuevo Avance</MudText>
+                                
+                                <MudTextField @bind-Value="newDevlogTitle" Label="Título del Avance" Variant="Variant.Outlined" Class="mb-3" />
+                                <MudTextField @bind-Value="newDevlogContent" Label="Descripción detallada" Lines="4" Variant="Variant.Outlined" Class="mb-4" />
+                                
                                 <div class="d-flex align-center gap-4">
-                                    <InputFile id="fileInput" OnChange="UploadImage" hidden accept=".jpg,.jpeg,.png" />
+                                    <InputFile id="fileInput" OnChange="SelectMainImage" hidden accept=".jpg,.jpeg,.png" />
                                     <MudButton HtmlTag="label"
                                                Variant="Variant.Filled"
-                                               Color="Color.Secondary"
-                                               StartIcon="@Icons.Material.Filled.CloudUpload"
-                                               for="fileInput"
-                                               Disabled="isUploading">
-                                        @(isUploading ? "Subiendo..." : "Subir Avance")
+                                               Color="@(selectedFile != null ? Color.Success : Color.Secondary)"
+                                               StartIcon="@(selectedFile != null ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.PhotoCamera)"
+                                               for="fileInput">
+                                        @(selectedFile != null ? selectedFile.Name : "Seleccionar Portada (Requerida)")
+                                    </MudButton>
+
+                                    <MudButton Variant="Variant.Filled" 
+                                               Color="Color.Primary" 
+                                               OnClick="UploadDevlog" 
+                                               Disabled="@(isUploading || string.IsNullOrWhiteSpace(newDevlogTitle) || string.IsNullOrWhiteSpace(newDevlogContent) || selectedFile == null)"
+                                               StartIcon="@Icons.Material.Filled.Send">
+                                        @(isUploading ? "Publicando..." : "Publicar Devlog")
                                     </MudButton>
                                 </div>
-                            </div>
+                            </MudPaper>
                             <MudDivider Class="mb-6"/>
                         }
 
@@ -105,16 +116,37 @@
                             <MudGrid>
                                 @foreach (var devlog in project.devlogs.OrderByDescending(d => d.created_at))
                                 {
-                                    <MudItem xs="12" sm="6" md="4">
-                                        <MudCard Elevation="3" Class="neon-card">
-                                            <MudCardMedia Image="@devlog.image_url" Height="200" />
+                                    <MudItem xs="12" md="6" lg="4">
+                                        <MudCard Elevation="3" Class="devlog-card">
+                                            <MudCardMedia Image="@devlog.main_image_url" Height="250" />
                                             <MudCardContent>
-                                                <div class="d-flex justify-space-between align-center">
-                                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@devlog.created_at.ToString("dd MMM yyyy HH:mm")</MudText>
+                                                <MudText Typo="Typo.h6" Style="font-weight: 700;">@devlog.title</MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2 d-block">@devlog.created_at.ToString("dd MMM yyyy HH:mm")</MudText>
+                                                <MudText Typo="Typo.body2" Class="mb-4">@devlog.content</MudText>
+                                                
+                                                <div class="d-flex justify-space-between align-center mt-auto">
+                                                    @if(isOwner) {
+                                                        <InputFile id="@($"galleryInput_{devlog.id}")" OnChange="@(e => UploadGalleryImage(e, devlog.id))" hidden accept=".jpg,.jpeg,.png" />
+                                                        <MudButton HtmlTag="label" for="@($"galleryInput_{devlog.id}")" Variant="Variant.Text" Color="Color.Info" Size="Size.Small" StartIcon="@Icons.Material.Filled.AddPhotoAlternate">Añadir Fotos</MudButton>
+                                                    } else {
+                                                        <span></span>
+                                                    }
                                                     <MudBadge Content="@(devlog.reactions != null ? devlog.reactions.Count : 0)" Color="Color.Error" Overlap="true" Class="mx-2">
                                                         <MudIconButton Icon="@Icons.Material.Filled.LocalFireDepartment" Color="Color.Warning" Size="Size.Small" OnClick="@(() => AddReaction(devlog.id))" />
                                                     </MudBadge>
                                                 </div>
+                                                
+                                                @if(devlog.images != null && devlog.images.Any())
+                                                {
+                                                    <MudDivider Class="my-3"/>
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2 d-block">Galería Adicional</MudText>
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        @foreach (var img in devlog.images)
+                                                        {
+                                                            <MudImage Src="@img.image_url" Width="100" Height="100" ObjectFit="ObjectFit.Cover" Class="rounded" />
+                                                        }
+                                                    </div>
+                                                }
                                             </MudCardContent>
                                         </MudCard>
                                     </MudItem>
@@ -168,7 +200,11 @@
         }
     }
 
-    private async Task UploadImage(InputFileChangeEventArgs e)
+    private string newDevlogTitle = "";
+    private string newDevlogContent = "";
+    private IBrowserFile? selectedFile;
+
+    private void SelectMainImage(InputFileChangeEventArgs e)
     {
         var file = e.File;
         if (file == null) return;
@@ -186,42 +222,123 @@
             return;
         }
 
+        selectedFile = file;
+    }
+
+    private async Task UploadDevlog()
+    {
+        if (selectedFile == null || string.IsNullOrWhiteSpace(newDevlogTitle) || string.IsNullOrWhiteSpace(newDevlogContent))
+            return;
+
         isUploading = true;
         try
         {
             using var content = new MultipartFormDataContent();
-            using var fileStream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
-            using var streamContent = new StreamContent(fileStream);
-            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
             
-            content.Add(streamContent, "file", file.Name);
+            // Add Text Fields
+            content.Add(new StringContent(newDevlogTitle), "title");
+            content.Add(new StringContent(newDevlogContent), "content");
+            content.Add(new StringContent(currentUserId ?? ""), "user_id");
 
-            var response = await Http.PostAsync($"projects/{Id}/devlogs?user_id={currentUserId}", content);
+            // Add Image File
+            using var fileStream = selectedFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var streamContent = new StreamContent(fileStream);
+            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(selectedFile.ContentType);
+            content.Add(streamContent, "main_image", selectedFile.Name);
+
+            var response = await Http.PostAsync($"projects/{Id}/devlogs", content);
             
             if (response.IsSuccessStatusCode)
             {
                 var newDevlog = await response.Content.ReadFromJsonAsync<DevlogResponse>();
                 if (newDevlog != null)
                 {
-                    project?.devlogs.Add(newDevlog);
-                    Snackbar.Add("Avance subido con éxito", Severity.Success);
+                    if (project != null) {
+                        project.devlogs ??= new List<DevlogResponse>();
+                        project.devlogs.Add(newDevlog);
+                    }
+                    
+                    // Reset Form
+                    newDevlogTitle = "";
+                    newDevlogContent = "";
+                    selectedFile = null;
+
+                    Snackbar.Add("Devlog publicado con éxito", Severity.Success);
                 }
             }
             else
             {
                 var errorText = await response.Content.ReadAsStringAsync();
-                Snackbar.Add($"Error al subir imagen: {errorText}", Severity.Error);
+                Snackbar.Add($"Error al publicar: {errorText}", Severity.Error);
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Upload error: {ex.Message}");
-            Snackbar.Add("Error inesperado al subir la imagen", Severity.Error);
+            Snackbar.Add("Error inesperado al publicar el devlog", Severity.Error);
         }
         finally
         {
             isUploading = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task UploadGalleryImage(InputFileChangeEventArgs e, int devlogId)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        var ext = Path.GetExtension(file.Name).ToLower();
+        if (ext != ".jpg" && ext != ".jpeg" && ext != ".png")
+        {
+            Snackbar.Add("Solo se permiten archivos JPG y PNG.", Severity.Warning);
+            return;
+        }
+
+        if (file.Size > 5 * 1024 * 1024)
+        {
+            Snackbar.Add("El archivo no debe pesar más de 5MB.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            content.Add(new StringContent(currentUserId ?? ""), "user_id");
+
+            using var fileStream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var streamContent = new StreamContent(fileStream);
+            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+            content.Add(streamContent, "image", file.Name);
+
+            var response = await Http.PostAsync($"projects/devlogs/{devlogId}/images", content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var newImage = await response.Content.ReadFromJsonAsync<DevlogImageResponse>();
+                if (newImage != null && project != null && project.devlogs != null)
+                {
+                    var targetDevlog = project.devlogs.FirstOrDefault(d => d.id == devlogId);
+                    if (targetDevlog != null)
+                    {
+                        targetDevlog.images ??= new List<DevlogImageResponse>();
+                        targetDevlog.images.Add(newImage);
+                        StateHasChanged();
+                    }
+                }
+                Snackbar.Add("Foto agregada a la galería", Severity.Success);
+            }
+            else
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Error al subir foto: {errorText}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Upload gallery error: {ex.Message}");
+            Snackbar.Add("Error inesperado al subir foto", Severity.Error);
         }
     }
 
@@ -266,6 +383,11 @@
         NavigationManager.NavigateTo("/projects");
     }
 
+    private void OpenGalleryUpload(int devlogId)
+    {
+        // Esto invocaría un IJSRuntime para hacer click, per como no tenemos JS interop inyectado en este momento, usaremos el approach simple del HTMLLabel nativo en razor que acabamos de agregar. Esta funcion queda dummy ya que el Label se clickea nativamente.
+    }
+
     // --- DTO CLASS EXCLUSIVA EN BLOQUE @CODE (REGLA ESTRICTA) ---
     public class ProjectDetailResponse
     {
@@ -284,9 +406,20 @@
     {
         public int id { get; set; }
         public int project_id { get; set; }
-        public string image_url { get; set; } = string.Empty;
+        public string title { get; set; } = string.Empty;
+        public string content { get; set; } = string.Empty;
+        public string main_image_url { get; set; } = string.Empty;
         public DateTime created_at { get; set; }
         public List<ReactionResponse> reactions { get; set; } = new();
+        public List<DevlogImageResponse> images { get; set; } = new();
+    }
+
+    public class DevlogImageResponse
+    {
+        public int id { get; set; }
+        public int devlog_id { get; set; }
+        public string image_url { get; set; } = string.Empty;
+        public DateTime created_at { get; set; }
     }
 
     public class ReactionResponse

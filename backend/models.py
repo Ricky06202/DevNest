@@ -103,11 +103,24 @@ class Devlog(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
-    image_url = Column(String(500), nullable=False)
+    title = Column(String(150), nullable=False)
+    content = Column(Text, nullable=False)
+    main_image_url = Column(String(500), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     project = relationship("Project", back_populates="devlogs")
     reactions = relationship("Reaction", back_populates="devlog", cascade="all, delete-orphan")
+    images = relationship("DevlogImage", back_populates="devlog", cascade="all, delete-orphan")
+
+class DevlogImage(Base):
+    __tablename__ = "devlog_images"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    devlog_id = Column(Integer, ForeignKey("devlogs.id", ondelete="CASCADE"), nullable=False)
+    image_url = Column(String(500), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    devlog = relationship("Devlog", back_populates="images")
 
 class Reaction(Base):
     __tablename__ = "reactions"

@@ -90,14 +90,25 @@ class ReactionResponse(ReactionBase):
     
     model_config = ConfigDict(from_attributes=True)
 
-class DevlogBase(BaseModel):
+class DevlogImageResponse(BaseModel):
+    id: int
+    devlog_id: int
     image_url: str
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class DevlogBase(BaseModel):
+    title: str = Field(..., max_length=150)
+    content: str
+    main_image_url: str
 
 class DevlogResponse(DevlogBase):
     id: int
     project_id: int
     created_at: datetime
     reactions: List[ReactionResponse] = []
+    images: List[DevlogImageResponse] = []
     
     model_config = ConfigDict(from_attributes=True)
 
