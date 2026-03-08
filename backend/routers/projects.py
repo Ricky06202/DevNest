@@ -119,7 +119,7 @@ def create_devlog_post(
     with open(filepath, "wb") as buffer:
         shutil.copyfileobj(main_image.file, buffer)
         
-    main_image_url = f"/uploads/{filename}"
+    main_image_url = f"/api/uploads/{filename}"
     
     devlog = models.Devlog(
         project_id=project_id, 
@@ -162,7 +162,7 @@ def upload_devlog_extra_image(
     with open(filepath, "wb") as buffer:
         shutil.copyfileobj(image.file, buffer)
         
-    image_url = f"/uploads/{filename}"
+    image_url = f"/api/uploads/{filename}"
     
     devlog_image = models.DevlogImage(devlog_id=devlog_id, image_url=image_url)
     db.add(devlog_image)

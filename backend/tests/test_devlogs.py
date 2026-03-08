@@ -59,7 +59,7 @@ def test_upload_devlog_valid_image():
     response_data = response.json()
     assert response_data["project_id"] == project.id
     assert response_data["title"] == "Mi Primera Prueba"
-    assert response_data["main_image_url"].startswith("/uploads/devlog_")
+    assert response_data["main_image_url"].startswith("/api/uploads/devlog_")
     assert response_data["main_image_url"].endswith(".png")
 
 def test_upload_devlog_extra_image():
@@ -77,7 +77,7 @@ def test_upload_devlog_extra_image():
     
     response_data = response.json()
     assert response_data["devlog_id"] == devlog.id
-    assert response_data["image_url"].startswith("/uploads/gallery_")
+    assert response_data["image_url"].startswith("/api/uploads/gallery_")
     assert response_data["image_url"].endswith(".jpg")
 
     # Cleanup
